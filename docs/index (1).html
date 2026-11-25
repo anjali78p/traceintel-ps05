@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRACEINTEL | Cyber Financial Investigation Workspace</title>
+<style>
+:root{
+ --navy:#102235;--navy2:#17334a;--ink:#172b3a;--muted:#64798a;--line:#dce5e9;
+ --bg:#f3f6f7;--white:#fff;--teal:#009d91;--teal2:#dff3ef;--blue:#4b8bb8;
+ --blue2:#e7f0f7;--amber:#d9902f;--amber2:#fbf0de;--red:#c85d64;--red2:#fae9ea;
+ --green:#2c9b70;--green2:#e3f3eb;--shadow:0 8px 24px rgba(16,34,53,.06);
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.topbar{height:66px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:22px;padding:0 24px;position:sticky;top:0;z-index:20;box-shadow:0 3px 12px #0b1b2b20}
+.brand{display:flex;align-items:center;gap:10px;min-width:250px}.brandmark{height:34px;width:34px;border:2px solid #00c4b4;border-radius:10px;display:grid;place-items:center;color:#00c4b4;font-weight:900}
+.brand strong{font-size:20px;letter-spacing:.4px}.brand strong span{color:#00c4b4}.brand small{display:block;color:#c1d0da;font-size:10px;margin-top:-2px}
+.search{flex:1;max-width:560px;background:#203b52;border:1px solid #36536a;border-radius:9px;padding:10px 14px;color:#d8e4eb;outline:none}
+.topright{margin-left:auto;color:#d5e0e7;font-size:12px;display:flex;gap:18px;align-items:center}
+.layout{display:flex;min-height:calc(100vh - 66px)}
+.sidebar{width:220px;background:var(--navy);padding:20px 12px;color:#c4d2dc;flex-shrink:0}
+.navitem{display:flex;gap:12px;align-items:center;padding:12px 13px;border-radius:8px;margin:4px 0;color:#c4d2dc;text-decoration:none;font-weight:550;cursor:pointer}
+.navitem:hover{background:#1a3b54}.navitem.active{background:linear-gradient(90deg,#009d91,#078e86);color:white;box-shadow:0 5px 14px #009d9133}
+.navicon{width:20px;text-align:center;font-size:16px}.navbottom{border-top:1px solid #294459;margin-top:22px;padding-top:14px}
+.main{padding:26px 28px 44px;min-width:0;flex:1;max-width:1700px;margin:auto}
+.pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.eyebrow{color:var(--teal);font-weight:800;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+h1{font-size:26px;line-height:1.2;margin:6px 0 7px;letter-spacing:-.5px}
+.subtitle{color:var(--muted);margin:0;font-size:13px}
+.status{background:var(--teal2);color:#007e75;padding:7px 12px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap}
+.workflow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);padding:13px 16px;border-radius:11px;margin-bottom:18px;box-shadow:var(--shadow);overflow:auto}
+.wf-label{font-size:10px;color:var(--muted);font-weight:800;margin-right:10px}
+.wfstep{display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--muted);font-size:11px;font-weight:750}
+.wfdot{height:22px;width:22px;border-radius:50%;display:grid;place-items:center;background:#edf1f3;color:#7a8d9b;font-size:11px}
+.wfstep.done .wfdot{background:var(--green2);color:var(--green)}.wfstep.current{color:var(--teal)}.wfstep.current .wfdot{background:var(--teal2);color:var(--teal)}
+.wfarrow{color:#a7b5be}
+.grid{display:grid;gap:16px}.grid.overview{grid-template-columns:270px minmax(360px,1fr) 280px}.grid.two{grid-template-columns:minmax(0,1.4fr) minmax(310px,.9fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;box-shadow:var(--shadow);min-width:0}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.card h3{font-size:13px;margin:0;font-weight:850;letter-spacing:.15px}.muted{color:var(--muted)}.small{font-size:11px}.tiny{font-size:10px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #edf1f3;font-size:11px}.kv:last-child{border:0}.kv span{color:var(--muted)}.kv b{text-align:right}
+.tag{display:inline-flex;align-items:center;border-radius:20px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+.tag.teal{background:var(--teal2);color:#007f75}.tag.red{background:var(--red2);color:var(--red)}.tag.amber{background:var(--amber2);color:#a86a12}.tag.green{background:var(--green2);color:var(--green)}.tag.blue{background:var(--blue2);color:#3979a7}.tag.gray{background:#eef2f4;color:#657988}
+.btn{border:0;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:800;background:var(--teal);color:white;box-shadow:0 3px 8px #009d9128}
+.btn:hover{filter:brightness(.96);transform:translateY(-1px)}.btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}.btn.dark{background:var(--navy2)}.btn.warn{background:var(--amber)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.source-list{display:grid;gap:8px;margin-top:12px}.source{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:11px}.source .file{font-size:16px}.source small{display:block;color:var(--muted)}
+.moneyflow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:24px 0 18px;overflow-x:auto;padding:5px 0}
+.node{min-width:86px;text-align:center}.nodecircle{height:48px;width:48px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;font-size:19px;background:var(--blue2);color:var(--blue);border:1px solid #c8dce9}
+.node.teal .nodecircle{background:var(--teal2);color:var(--teal);border-color:#b9e4dc}.node.amber .nodecircle{background:var(--amber2);color:var(--amber);border-color:#f0d9b5}.node.red .nodecircle{background:var(--red2);color:var(--red);border-color:#f0c7ca}
+.node b{display:block;font-size:10px}.node small{font-size:9px;color:var(--muted)}
+.flowline{flex:1;min-width:18px;height:2px;background:var(--teal);position:relative}.flowline:after{content:"›";position:absolute;right:-2px;top:-12px;color:var(--teal);font-size:22px}
+.flowamount{font-size:9px;font-weight:800;text-align:center;margin-bottom:4px;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;box-shadow:var(--shadow)}.kpi label{display:block;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.5px}.kpi strong{display:block;font-size:21px;margin-top:7px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:9px}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}th{text-align:left;background:#f0f4f6;color:#607487;font-size:9px;letter-spacing:.3px;padding:11px 10px}td{padding:11px 10px;border-top:1px solid #edf1f3}tr:hover td{background:#f9fbfc}
+.riskitem{padding:12px;border:1px solid var(--line);border-radius:9px;margin:9px 0;display:flex;gap:10px;align-items:flex-start}.riskicon{font-size:18px}.riskitem b{font-size:11px;display:block}.riskitem p{font-size:10px;color:var(--muted);margin:3px 0 0}
+.timeline{border-left:2px solid #b7e3dc;margin:8px 0 0 7px;padding-left:18px}.event{position:relative;margin:0 0 16px}.event:before{content:"";position:absolute;left:-24px;top:3px;height:10px;width:10px;border-radius:50%;background:var(--teal);border:2px solid white;box-shadow:0 0 0 1px var(--teal)}.event b{font-size:10px}.event small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.input{border:1px solid var(--line);background:white;border-radius:8px;padding:9px 11px;font-size:11px;outline:none;color:var(--ink)}.input:focus{border-color:var(--teal);box-shadow:0 0 0 3px #009d9117}
+.searchinput{min-width:220px;flex:1}.dropzone{border:1.5px dashed #9bcfc8;background:#f3fbf9;border-radius:10px;padding:20px;text-align:center;color:var(--muted);margin:12px 0}.dropzone strong{display:block;color:var(--ink);margin-bottom:5px}
+.indicator-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0}.indicator{border:1px solid var(--line);border-radius:10px;padding:15px 12px;background:#fff;position:relative}.indicator:before{content:"";height:4px;position:absolute;left:0;right:0;top:0;border-radius:10px 10px 0 0;background:var(--teal)}.indicator:nth-child(2):before{background:var(--blue)}.indicator:nth-child(3):before{background:var(--amber)}.indicator:nth-child(4):before{background:var(--blue)}.indicator:nth-child(5):before{background:var(--teal)}.indicator label{font-size:9px;font-weight:850;color:var(--muted);display:block;margin:4px 0 9px}.indicator b{font-size:12px;display:block}.indicator small{font-size:9px;color:var(--muted)}
+.intelgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.intelbox{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px}.intelbox h4{margin:0 0 10px;font-size:11px}.intelbox p{font-size:10px;color:var(--muted);margin:6px 0}
+.notice{border-radius:9px;background:var(--navy);color:#fff;padding:14px 16px;margin-top:14px;font-size:11px}.notice b{color:#9ce4d9}
+.grapharea{background:linear-gradient(180deg,#fbfdfd,#f3f7f8);border:1px solid var(--line);border-radius:10px;min-height:280px;position:relative;overflow:hidden;padding:18px}
+.graphsvg{width:100%;height:250px}.entity{fill:#fff;stroke:#86cfc4;stroke-width:2}.entity.blue{stroke:#8ab7d3}.entity.amber{stroke:#e5b66f}.entity.red{stroke:#d98b91}.edge{stroke:#00a094;stroke-width:2.5;fill:none}.edge.dash{stroke:#d9902f;stroke-dasharray:5 5}
+.graphlabel{font-size:12px;fill:#172b3a;font-weight:700}.graphsub{font-size:10px;fill:#64798a}
+.emptyhint{background:#f7fafb;border:1px dashed #ccd9df;border-radius:9px;padding:13px;color:var(--muted);font-size:10px}
+.toast{position:fixed;right:24px;bottom:24px;background:var(--navy);color:#fff;padding:12px 16px;border-radius:9px;box-shadow:var(--shadow);z-index:50;font-size:12px;display:none;max-width:360px}
+.footer{color:#8293a0;font-size:9px;margin-top:24px;display:flex;justify-content:space-between}
+.page{display:none}.page.active{display:block}
+@media(max-width:1100px){.grid.overview{grid-template-columns:1fr 1fr}.grid.overview .riskcard{grid-column:1/-1}.indicator-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.topbar{padding:0 12px}.brand{min-width:0}.brand small,.search,.topright{display:none}.layout{display:block}.sidebar{width:100%;display:flex;overflow:auto;padding:8px;gap:4px}.navitem{white-space:nowrap;padding:9px 11px;font-size:11px}.navbottom{display:none}.main{padding:18px 13px}.pagehead{display:block}h1{font-size:21px}.grid.overview,.grid.two{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.indicator-grid{grid-template-columns:repeat(2,1fr)}.intelgrid{grid-template-columns:1fr}.workflow{gap:9px}.wf-label{display:none}}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><div class="brandmark">T</div><div><strong>TRACE<span>INTEL</span></strong><small>Cyber Financial Investigation Workspace</small></div></div>
+ <input class="search" id="globalSearch" placeholder="⌕  Search cases, accounts, UTR, domains, IPs..." />
+ <div class="topright"><span>◉ Notifications</span><span>◉ Investigator ▾</span></div>
+</header>
+<div class="layout">
+<aside class="sidebar">
+ <a class="navitem" data-page="dashboard"><span class="navicon">▦</span>Dashboard</a>
+ <a class="navitem active" data-page="cases"><span class="navicon">▣</span>Cases</a>
+ <a class="navitem" data-page="financial"><span class="navicon">⇄</span>Financial Analysis</a>
+ <a class="navitem" data-page="digital"><span class="navicon">⌘</span>Digital Infrastructure</a>
+ <a class="navitem" data-page="graph"><span class="navicon">◈</span>Entity Graph</a>
+ <a class="navitem" data-page="evidence"><span class="navicon">▤</span>Evidence Register</a>
+ <a class="navitem" data-page="reports"><span class="navicon">⇩</span>Reports</a>
+ <div class="navbottom"><a class="navitem" data-page="settings"><span class="navicon">⚙</span>Settings</a></div>
+</aside>
+<main class="main">
+<section class="page active" id="page-cases">
+ <div class="pagehead"><div><div class="eyebrow">CASE WORKSPACE / OVERVIEW</div><h1>Case RJ-2026-0142 | UPI fraud investigation</h1><p class="subtitle">A consolidated view of the financial trail, digital indicators and source evidence.</p></div><span class="status">● UNDER REVIEW</span></div>
+ <div class="workflow"><span class="wf-label">WORKFLOW</span><span class="wfstep done"><i class="wfdot">✓</i> INGEST</span><span class="wfarrow">→</span><span class="wfstep current"><i class="wfdot">2</i> ANALYSE</span><span class="wfarrow">→</span><span class="wfstep"><i class="wfdot">3</i> CORRELATE</span><span class="wfarrow">→</span><span class="wfstep"><i class="wfdot">4</i> REPORT</span></div>
+ <div class="grid overview">
+  <div class="card"><div class="cardhead"><h3>CASE OVERVIEW</h3><span class="tag teal">OPEN</span></div>
+   <div class="kv"><span>Case ID</span><b>RJ-2026-0142</b></div><div class="kv"><span>Category</span><b>UPI / Online Fraud</b></div><div class="kv"><span>Reported on</span><b>20 Nov 2026, 10:24 IST</b></div><div class="kv"><span>Reported amount</span><b>₹1,80,000</b></div><div class="kv"><span>Linked indicators</span><b>3 accounts · 1 domain · 2 IPs</b></div>
+   <div class="cardhead" style="margin:16px 0 8px"><h3>SOURCE FILES (3)</h3><span class="tag gray">DEMO</span></div>
+   <div class="source-list"><div class="source"><span class="file">▤</span><div><b>transaction_statement.csv</b><small>Demo bank statement · 6 rows</small></div></div><div class="source"><span class="file">▤</span><div><b>complaint_details.pdf</b><small>Illustrative complaint summary</small></div></div><div class="source"><span class="file">▤</span><div><b>suspicious_links.txt</b><small>Sample indicators</small></div></div></div>
+  </div>
+  <div class="card"><div class="cardhead"><h3>◈ MONEY TRAIL <span class="muted">(Transaction flow)</span></h3><span class="tag blue">ILLUSTRATIVE</span></div>
+   <div class="moneyflow">
+    <div class="node teal"><div class="nodecircle">♙</div><b>Victim</b><small>V-001</small></div><div class="flowline"></div>
+    <div class="node"><div class="nodecircle">▥</div><b>Account A</b><small>A-7843</small></div><div class="flowline"></div>
+    <div class="node amber"><div class="nodecircle">▥</div><b>Account B</b><small>B-2190</small></div><div class="flowline"></div>
+    <div class="node red"><div class="nodecircle">▥</div><b>Account C</b><small>C-9067</small></div>
+   </div>
+   <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:8px 0 0"><div class="kpi"><label>TRANSFERS</label><strong>3</strong></div><div class="kpi"><label>TRACED AMOUNT</label><strong>₹1.72L</strong></div><div class="kpi"><label>LINKED ACCOUNTS</label><strong>3</strong></div></div>
+  </div>
+  <div class="card riskcard"><div class="cardhead"><h3>⚠ RISK INDICATORS</h3><span class="tag amber">RULE-BASED</span></div>
+   <div class="riskitem"><span class="riskicon">ϟ</span><div><b>Rapid in–out <span class="tag red">HIGH</span></b><p>Large credit followed by outward transfer within a short interval.</p></div></div>
+   <div class="riskitem"><span class="riskicon">♧</span><div><b>Multiple senders <span class="tag amber">MEDIUM</span></b><p>Funds received from several unrelated counterparties.</p></div></div>
+   <div class="riskitem"><span class="riskicon">◷</span><div><b>Dormant-to-active <span class="tag amber">MEDIUM</span></b><p>Account activity changes sharply within the sample window.</p></div></div>
+  </div>
+ </div>
+ <div class="grid two" style="margin-top:16px">
+  <div class="card"><div class="cardhead"><h3>INVESTIGATION TIMELINE</h3><span class="tag gray">DEMO EVENTS</span></div><div class="timeline"><div class="event"><b>20 Nov 2026 · 10:24 IST</b><small>Case registered and source documents ingested.</small></div><div class="event"><b>20 Nov 2026 · 11:07 IST</b><small>Transactions normalized and initial money trail identified.</small></div><div class="event"><b>20 Nov 2026 · 12:18 IST</b><small>Domain and IP intelligence added to the case.</small></div><div class="event"><b>20 Nov 2026 · 14:05 IST</b><small>Three accounts flagged for investigator review.</small></div></div></div>
+  <div class="card"><div class="cardhead"><h3>RECENT EVIDENCE</h3><button class="btn secondary" onclick="go('evidence')">View register →</button></div><div class="kv"><span>EV-001 · Transaction log</span><b class="tag green">VERIFIED</b></div><div class="kv"><span>EV-002 · Domain record</span><b class="tag green">VERIFIED</b></div><div class="kv"><span>EV-003 · IP intelligence</span><b class="tag blue">IN ANALYSIS</b></div><div class="kv"><span>EV-004 · Account profile</span><b class="tag amber">PENDING</b></div></div>
+ </div>
+</section>
+
+<section class="page" id="page-financial">
+ <div class="pagehead"><div><div class="eyebrow">ANALYSIS / FINANCIAL INTELLIGENCE</div><h1>Financial analysis</h1><p class="subtitle">Normalize statement records, inspect explainable indicators and trace funds from a victim UTR.</p></div><span class="status">CASE RJ-2026-0142</span></div>
+ <div class="toolbar"><label class="btn" for="fileInput">＋ Upload CSV statement</label><input id="fileInput" type="file" accept=".csv,text/csv" hidden/><input class="input searchinput" id="txSearch" placeholder="Search account, UTR, narration..."/><button class="btn secondary" onclick="downloadTransactions()">Export normalized CSV</button></div>
+ <div class="dropzone"><strong>Import a demo CSV statement</strong>CSV upload is supported in this prototype. PDF/Excel ingestion is planned for the full implementation.</div>
+ <div class="kpis"><div class="kpi"><label>TRANSACTIONS LOADED</label><strong id="txCount">6</strong></div><div class="kpi"><label>FLAGGED ACCOUNTS</label><strong>03</strong></div><div class="kpi"><label>TRACED AMOUNT</label><strong>₹1,72,000</strong></div><div class="kpi"><label>DATA WARNINGS</label><strong>02</strong></div></div>
+ <div class="grid two">
+  <div class="card"><div class="cardhead"><h3>NORMALIZED TRANSACTIONS</h3><span class="tag teal">CANONICAL SCHEMA</span></div><div class="tablewrap"><table id="txTable"><thead><tr><th>DATE / TIME</th><th>ACCOUNT</th><th>DIRECTION</th><th>AMOUNT</th><th>UTR / REF</th><th>SOURCE</th></tr></thead><tbody id="txBody"></tbody></table></div><p class="small muted">Each row should retain its source file, sheet/page, row number and parser status.</p></div>
+  <div class="card"><div class="cardhead"><h3>EXPLAINABLE ACCOUNT FLAGS</h3><span class="tag amber">REVIEW LEADS</span></div>
+   <div class="riskitem"><span>ϟ</span><div><b>A-7843 · Rapid in–out <span class="tag red">HIGH</span></b><p>Outward transfer follows a large credit in a short time window.</p></div></div>
+   <div class="riskitem"><span>♧</span><div><b>B-2190 · Multiple counterparties <span class="tag amber">MEDIUM</span></b><p>Multiple incoming counterparties in the illustrative dataset.</p></div></div>
+   <div class="riskitem"><span>◷</span><div><b>C-9067 · Dormant-to-active <span class="tag amber">MEDIUM</span></b><p>Activity pattern requires comparison with a wider account history.</p></div></div>
+   <div class="emptyhint">These are rule-based demo flags—not a trained ML model and not a determination of guilt.</div>
+  </div>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="cardhead"><h3>UTR-LED MONEY TRAIL</h3><button class="btn secondary" onclick="go('graph')">Open entity graph →</button></div><div class="moneyflow"><div class="node teal"><div class="nodecircle">♙</div><b>Victim</b><small>V-001</small></div><div class="flowline"></div><div class="node"><div class="nodecircle">▥</div><b>Account A</b><small>₹1,80,000</small></div><div class="flowline"></div><div class="node amber"><div class="nodecircle">▥</div><b>Account B</b><small>₹1,75,000</small></div><div class="flowline"></div><div class="node red"><div class="nodecircle">▥</div><b>Account C</b><small>₹1,72,000</small></div></div></div>
+</section>
+
+<section class="page" id="page-digital">
+ <div class="pagehead"><div><div class="eyebrow">ENRICHMENT / DIGITAL INFRASTRUCTURE</div><h1>Domain & IP intelligence</h1><p class="subtitle">Collect public infrastructure context while preserving observation time, source and attribution limits.</p></div><span class="status">PUBLIC DATA ONLY</span></div>
+ <div class="toolbar"><input class="input searchinput" id="indicatorInput" value="suspicious-example.test" placeholder="Enter domain or IP address"/><button class="btn" onclick="lookupIndicator()">Lookup indicator</button><button class="btn secondary" onclick="addIndicator()">＋ Add to case</button></div>
+ <div class="card"><div class="cardhead"><h3>INFRASTRUCTURE RESOLUTION</h3><span class="tag blue">ILLUSTRATIVE LOOKUP</span></div>
+  <div class="indicator-grid"><div class="indicator"><label>01 · DOMAIN</label><b id="domainValue">suspicious-example.test</b><small>RDAP / WHOIS</small></div><div class="indicator"><label>02 · DNS</label><b>A · AAAA · NS · MX</b><small>Records / subdomains</small></div><div class="indicator"><label>03 · IP ADDRESS</label><b>203.0.113.10</b><small>Documentation IP</small></div><div class="indicator"><label>04 · ASN / HOST</label><b>Provider allocation</b><small>ISP · cloud · region</small></div><div class="indicator"><label>05 · CASE LINK</label><b>Possible association</b><small>Requires review</small></div></div>
+ </div>
+ <div class="intelgrid" style="margin-top:15px">
+  <div class="intelbox"><h4 style="color:var(--teal)">REGISTRATION</h4><p>Registrar: Example Registrar</p><p>Created / expiry: illustrative values</p><p>Nameservers: ns1 / ns2.example</p><p class="tiny">Source: RDAP / WHOIS (demo placeholder)</p></div>
+  <div class="intelbox"><h4 style="color:var(--blue)">DNS + CERTIFICATES</h4><p>A / AAAA / MX / NS / TXT / CNAME</p><p>TLS certificate names</p><p>Certificate Transparency and subdomains where available</p><p class="tiny">Historical coverage varies by source.</p></div>
+  <div class="intelbox"><h4 style="color:var(--amber)">NETWORK CONTEXT</h4><p>ASN / ISP / cloud allocation</p><p>Reverse DNS and region</p><p>Public VPN / proxy indicators</p><p class="tiny">Geolocation is indicative, not proof.</p></div>
+ </div>
+ <div class="card" style="margin-top:15px"><div class="cardhead"><h3>OBSERVATION METADATA</h3><span class="tag gray">REQUIRED FOR EACH LOOKUP</span></div><div class="kv"><span>Source / provider</span><b>Public-source placeholder</b></div><div class="kv"><span>Retrieved at</span><b id="lookupTime">Not yet queried</b></div><div class="kv"><span>Observed timestamp / timezone</span><b>Not supplied in demo</b></div><div class="kv"><span>Confidence / limitation</span><b>Unverified demo indicator</b></div></div>
+ <div class="notice"><b>ATTRIBUTION SAFEGUARD</b><br/>Shared IPs, hosting, VPNs, dynamic addressing and geolocation are leads for review—not proof of common ownership or a person’s identity. This prototype does not perform live external lookups.</div>
+</section>
+
+<section class="page" id="page-graph">
+ <div class="pagehead"><div><div class="eyebrow">CORRELATION / ENTITY RELATIONSHIPS</div><h1>Entity graph</h1><p class="subtitle">Explore the illustrative links between the victim, accounts, domain, IP and evidence.</p></div><span class="status">DEMO GRAPH</span></div>
+ <div class="toolbar"><select class="input" id="graphFilter" onchange="filterGraph()"><option value="all">All entities</option><option value="financial">Financial entities</option><option value="digital">Digital entities</option></select><button class="btn secondary" onclick="toast('Graph view reset to the illustrative case layout.')">Reset graph</button></div>
+ <div class="card"><div class="cardhead"><h3>CASE RJ-2026-0142 · RELATIONSHIP MAP</h3><span class="tag amber">LINKS REQUIRE VALIDATION</span></div>
+ <div class="grapharea"><svg class="graphsvg" viewBox="0 0 900 250" role="img" aria-label="Illustrative entity relationship graph">
+  <path class="edge" d="M95 120 L270 120 L445 120 L620 120"/>
+  <path class="edge dash" d="M445 120 L445 35 L750 35 L750 120"/>
+  <path class="edge dash" d="M620 120 L750 120"/>
+  <circle class="entity" cx="95" cy="120" r="34"/><text class="graphlabel" x="95" y="124" text-anchor="middle">V-001</text><text class="graphsub" x="95" y="173" text-anchor="middle">Victim</text>
+  <circle class="entity blue" cx="270" cy="120" r="34"/><text class="graphlabel" x="270" y="124" text-anchor="middle">A-7843</text><text class="graphsub" x="270" y="173" text-anchor="middle">Account A</text>
+  <circle class="entity amber" cx="445" cy="120" r="34"/><text class="graphlabel" x="445" y="124" text-anchor="middle">B-2190</text><text class="graphsub" x="445" y="173" text-anchor="middle">Account B</text>
+  <circle class="entity red" cx="620" cy="120" r="34"/><text class="graphlabel" x="620" y="124" text-anchor="middle">C-9067</text><text class="graphsub" x="620" y="173" text-anchor="middle">Account C</text>
+  <rect class="entity" x="700" y="8" width="100" height="48" rx="9"/><text class="graphlabel" x="750" y="28" text-anchor="middle">DOMAIN</text><text class="graphsub" x="750" y="43" text-anchor="middle">sample.test</text>
+  <rect class="entity blue" x="810" y="95" width="80" height="50" rx="9"/><text class="graphlabel" x="850" y="116" text-anchor="middle">IP</text><text class="graphsub" x="850" y="131" text-anchor="middle">203.0.113.10</text>
+  <text class="graphsub" x="175" y="105" text-anchor="middle">UTR transfer</text><text class="graphsub" x="350" y="105" text-anchor="middle">UTR transfer</text><text class="graphsub" x="525" y="105" text-anchor="middle">UTR transfer</text>
+ </svg></div>
+ <p class="small muted">Solid lines represent illustrative transaction links. Dashed lines represent unverified digital-indicator associations. Relationship type and supporting evidence must be stored for every edge.</p>
+ </div>
+ <div class="grid two" style="margin-top:15px"><div class="card"><h3>SELECTED ENTITY</h3><div class="kv"><span>Entity</span><b>Account B · B-2190</b></div><div class="kv"><span>Relationship</span><b>Incoming + outgoing transfers</b></div><div class="kv"><span>Supporting evidence</span><b>EV-001 · transaction rows</b></div></div><div class="card"><h3>GRAPH LEGEND</h3><div class="kv"><span>Financial transaction</span><b style="color:var(--teal)">━━ Solid link</b></div><div class="kv"><span>Possible digital association</span><b style="color:var(--amber)">┄┄ Dashed link</b></div><div class="kv"><span>Unverified / needs review</span><b class="tag amber">REVIEW</b></div></div></div>
+</section>
+
+<section class="page" id="page-evidence">
+ <div class="pagehead"><div><div class="eyebrow">PROVENANCE / AUDIT TRAIL</div><h1>Evidence register</h1><p class="subtitle">Keep every observation, analytical result and report claim connected to its source.</p></div><button class="btn" onclick="addEvidence()">＋ Add evidence</button></div>
+ <div class="toolbar"><input class="input searchinput" id="evidenceSearch" placeholder="Search evidence ID, type, source..." oninput="filterEvidence()"/><select class="input" id="evidenceStatus" onchange="filterEvidence()"><option value="all">All statuses</option><option>Verified</option><option>In analysis</option><option>Pending</option></select><button class="btn secondary" onclick="downloadEvidence()">Export register CSV</button></div>
+ <div class="card"><div class="cardhead"><h3>EVIDENCE REGISTER</h3><span class="tag teal">SOURCE-LEVEL TRACEABILITY</span></div><div class="tablewrap"><table id="evidenceTable"><thead><tr><th>ID</th><th>TYPE</th><th>SOURCE</th><th>OBSERVED AT</th><th>METHOD / NOTE</th><th>STATUS</th></tr></thead><tbody id="evidenceBody"></tbody></table></div></div>
+ <div class="grid two" style="margin-top:15px"><div class="card"><h3>MINIMUM PROVENANCE FIELDS</h3><div class="kv"><span>Source file / provider</span><b>Required</b></div><div class="kv"><span>Page / sheet / row</span><b>Where applicable</b></div><div class="kv"><span>Observed timestamp + timezone</span><b>Required where available</b></div><div class="kv"><span>Method + limitation</span><b>Required</b></div></div><div class="card"><h3>REVIEW PRINCIPLE</h3><p class="muted small">A reviewer should be able to reproduce the path from source record → analysis → graph relationship → report statement. Keep raw evidence immutable and store derived findings separately.</p></div></div>
+</section>
+
+<section class="page" id="page-reports">
+ <div class="pagehead"><div><div class="eyebrow">OUTPUT / INVESTIGATION REPORTING</div><h1>Reports & lawful request drafts</h1><p class="subtitle">Assemble an evidence-linked case summary for authorized review and follow-up.</p></div><span class="status">DRAFT WORKSPACE</span></div>
+ <div class="grid two">
+  <div class="card"><div class="cardhead"><h3>REPORT BUILDER</h3><span class="tag teal">CASE RJ-2026-0142</span></div>
+   <label class="kv"><span>Include executive summary</span><input type="checkbox" checked/></label>
+   <label class="kv"><span>Include money-trail graph</span><input type="checkbox" checked/></label>
+   <label class="kv"><span>Include digital indicators</span><input type="checkbox" checked/></label>
+   <label class="kv"><span>Include evidence appendix</span><input type="checkbox" checked/></label>
+   <div class="btnrow" style="margin-top:16px"><button class="btn" onclick="printReport()">Generate / Print report</button><button class="btn secondary" onclick="downloadEvidence()">Export evidence CSV</button></div>
+  </div>
+  <div class="card"><div class="cardhead"><h3>INFORMATION REQUEST DRAFTS</h3><span class="tag amber">FOR AUTHORIZED REVIEW</span></div>
+   <div class="kv"><span>Bank / payment provider</span><b>Transaction identifiers + time</b></div><div class="kv"><span>Registrar</span><b>Domain + relevant date range</b></div><div class="kv"><span>Cloud / hosting provider</span><b>Exact IP + timestamp + timezone</b></div>
+   <p class="small muted">Draft templates only. Subscriber, login or other non-public records require applicable legal process and authorized agency handling.</p>
+   <button class="btn secondary" onclick="toast('Request template preview is a planned feature; no request has been sent.')">Preview request template</button>
+  </div>
+ </div>
+ <div class="notice"><b>PROTOTYPE LIMITATION</b><br/>Report generation uses the browser print dialog. No external agency, bank, registrar or cloud provider is contacted by this demo.</div>
+</section>
+
+<section class="page" id="page-dashboard">
+ <div class="pagehead"><div><div class="eyebrow">OPERATIONS / OVERVIEW</div><h1>Investigation dashboard</h1><p class="subtitle">A quick view of case workload and recent activity.</p></div><span class="status">DEMO ENVIRONMENT</span></div>
+ <div class="kpis"><div class="kpi"><label>OPEN CASES</label><strong>08</strong></div><div class="kpi"><label>ACCOUNTS FLAGGED</label><strong>24</strong></div><div class="kpi"><label>INDICATORS REVIEWED</label><strong>17</strong></div><div class="kpi"><label>REPORTS DRAFTED</label><strong>05</strong></div></div>
+ <div class="card"><div class="cardhead"><h3>RECENT CASES</h3><button class="btn" onclick="go('cases')">Open selected case →</button></div><div class="tablewrap"><table><thead><tr><th>CASE ID</th><th>TYPE</th><th>REPORTED</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody><tr><td>RJ-2026-0142</td><td>UPI / Online fraud</td><td>20 Nov 2026</td><td>₹1,80,000</td><td><span class="tag teal">Under review</span></td></tr><tr><td>RJ-2026-0138</td><td>Phishing / payment fraud</td><td>18 Nov 2026</td><td>₹74,500</td><td><span class="tag amber">Pending</span></td></tr><tr><td>RJ-2026-0129</td><td>Account layering</td><td>15 Nov 2026</td><td>₹2,10,000</td><td><span class="tag green">Report drafted</span></td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-settings">
+ <div class="pagehead"><div><div class="eyebrow">CONFIGURATION</div><h1>Settings</h1><p class="subtitle">Prototype environment and data-handling notes.</p></div></div>
+ <div class="card"><h3>DEMO MODE</h3><p class="muted small">This standalone HTML prototype stores no case data on a server. Uploaded CSV data is processed in the current browser session only. Refreshing the page resets it.</p><div class="kv"><span>External API calls</span><b>Disabled</b></div><div class="kv"><span>Authentication</span><b>Visual placeholder only</b></div><div class="kv"><span>Data classification</span><b>Synthetic / demonstration</b></div></div>
+</section>
+<div class="footer"><span>TRACEINTEL · PS05 · PROTOTYPE BUILD · SYNTHETIC DATA</span><span>For demonstration only · Not an operational police system</span></div>
+</main></div>
+<div class="toast" id="toast"></div>
+<script>
+const transactions=[
+ {time:"20 Nov 2026 10:32",account:"V-001",direction:"DEBIT",amount:180000,utr:"UTR-4831",source:"demo.csv"},
+ {time:"20 Nov 2026 10:41",account:"A-7843",direction:"CREDIT",amount:180000,utr:"UTR-4831",source:"demo.csv"},
+ {time:"20 Nov 2026 10:52",account:"A-7843",direction:"DEBIT",amount:175000,utr:"UTR-1190",source:"demo.csv"},
+ {time:"20 Nov 2026 11:04",account:"B-2190",direction:"CREDIT",amount:175000,utr:"UTR-1190",source:"demo.csv"},
+ {time:"20 Nov 2026 11:16",account:"B-2190",direction:"DEBIT",amount:172000,utr:"UTR-7624",source:"demo.csv"},
+ {time:"20 Nov 2026 11:28",account:"C-9067",direction:"CREDIT",amount:172000,utr:"UTR-7624",source:"demo.csv"}
+];
+const evidence=[
+ {id:"EV-001",type:"Transaction log",source:"Bank statement (demo CSV)",time:"20 Nov 2026, 10:30 IST",method:"Parsed row 1–6",status:"Verified"},
+ {id:"EV-002",type:"Domain record",source:"RDAP / WHOIS placeholder",time:"20 Nov 2026, 12:02 IST",method:"Public registration (demo)",status:"Verified"},
+ {id:"EV-003",type:"IP intelligence",source:"ASN lookup placeholder",time:"20 Nov 2026, 12:15 IST",method:"Provider allocation (demo)",status:"In analysis"},
+ {id:"EV-004",type:"Account profile",source:"Transaction dataset",time:"20 Nov 2026, 13:48 IST",method:"Rule-based flag",status:"Pending"}
+];
+function money(n){return "₹"+Number(n).toLocaleString("en-IN")}
+function renderTransactions(rows=transactions){
+ const body=document.getElementById("txBody"); if(!body)return;
+ body.innerHTML=rows.map(r=>`<tr><td>${r.time}</td><td><b>${r.account}</b></td><td><span class="tag ${r.direction==="CREDIT"?"green":"blue"}">${r.direction}</span></td><td>${money(r.amount)}</td><td>${r.utr}</td><td>${r.source}</td></tr>`).join("");
+ document.getElementById("txCount").textContent=rows.length;
+}
+function renderEvidence(rows=evidence){
+ const body=document.getElementById("evidenceBody"); if(!body)return;
+ body.innerHTML=rows.map(r=>`<tr><td><b>${r.id}</b></td><td>${r.type}</td><td>${r.source}</td><td>${r.time}</td><td>${r.method}</td><td><span class="tag ${r.status==="Verified"?"green":r.status==="Pending"?"amber":"blue"}">${r.status}</span></td></tr>`).join("");
+}
+function go(page){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.querySelectorAll(".navitem").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
+ const target=document.getElementById("page-"+page); if(target)target.classList.add("active");
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".navitem").forEach(n=>n.addEventListener("click",()=>go(n.dataset.page)));
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.style.display="block";clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.style.display="none",3200)}
+document.getElementById("txSearch").addEventListener("input",e=>{
+ const q=e.target.value.toLowerCase();renderTransactions(transactions.filter(r=>Object.values(r).join(" ").toLowerCase().includes(q)));
+});
+document.getElementById("fileInput").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ const text=await file.text();const lines=text.trim().split(/\r?\n/);const headers=lines.shift().split(",").map(x=>x.trim().toLowerCase());
+ const parsed=lines.map(line=>{const vals=line.split(",");const obj={};headers.forEach((h,i)=>obj[h]=(vals[i]||"").trim());return obj;});
+ const mapped=parsed.map((o,i)=>({
+  time:o.datetime||o.date||o.timestamp||`Imported row ${i+2}`,
+  account:o.account||o.account_id||o.account_ref||"UNKNOWN",
+  direction:(o.direction||o.type||"").toUpperCase().includes("CREDIT")?"CREDIT":(o.direction||o.type||"").toUpperCase().includes("DEBIT")?"DEBIT":"UNKNOWN",
+  amount:Number((o.amount||"0").replace(/[₹,]/g,""))||0,
+  utr:o.utr||o.utr_ref||o.reference||"—",source:file.name
+ }));
+ transactions.splice(0,transactions.length,...mapped);renderTransactions();toast(`Imported ${mapped.length} CSV rows in this browser session. Check column mapping before relying on results.`);
+});
+function csv(rows){return rows.map(r=>Object.values(r).map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n")}
+function download(name,data){const a=document.createElement("a");const url=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function downloadTransactions(){download("traceintel_normalized_transactions_demo.csv",csv(transactions));}
+function downloadEvidence(){download("traceintel_evidence_register_demo.csv",csv(evidence));}
+document.getElementById("evidenceSearch").addEventListener("input",filterEvidence);
+function filterEvidence(){const q=document.getElementById("evidenceSearch").value.toLowerCase();const st=document.getElementById("evidenceStatus").value;renderEvidence(evidence.filter(r=>(st==="all"||r.status===st)&&Object.values(r).join(" ").toLowerCase().includes(q)))}
+function lookupIndicator(){const v=document.getElementById("indicatorInput").value.trim();if(!v){toast("Enter a domain or IP indicator first.");return}document.getElementById("domainValue").textContent=v;document.getElementById("lookupTime").textContent=new Date().toLocaleString()+" (local browser time)";toast("Demo lookup updated. No live external lookup was performed.");}
+function addIndicator(){const v=document.getElementById("indicatorInput").value.trim();if(!v){toast("Enter an indicator first.");return}evidence.push({id:"EV-"+String(evidence.length+1).padStart(3,"0"),type:"Domain / IP indicator",source:v,time:new Date().toLocaleString(),method:"Manually added demo indicator",status:"Pending"});renderEvidence();toast("Indicator added to the in-memory demo evidence register.");}
+function addEvidence(){const id="EV-"+String(evidence.length+1).padStart(3,"0");evidence.push({id,type:"Manual note",source:"Investigator-entered demo item",time:new Date().toLocaleString(),method:"Manual entry — verify source",status:"Pending"});renderEvidence();toast("Demo evidence item added. Refreshing resets it.");}
+function filterGraph(){const v=document.getElementById("graphFilter").value;toast(v==="all"?"Showing all illustrative entities.":`Showing ${v} entities (visual demo).`)}
+function printReport(){toast("Opening browser print dialog. Review and choose Save as PDF.");setTimeout(()=>window.print(),450)}
+document.getElementById("globalSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){const q=e.target.value.toLowerCase();if(q.includes("domain")||q.includes("ip"))go("digital");else if(q.includes("utr")||q.includes("account"))go("financial");else go("cases");}});
+renderTransactions();renderEvidence();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# TRACEINTEL thresholds. All values are review-priority heuristics, NOT proof of wrongdoing.
+# Amounts are in rupees. Every analysis run records the config it used.
+ingest:
+  timezone: Asia/Kolkata        # assumed timezone of statement timestamps (documented assumption)
+  balance_tolerance_paise: 1
+rules:
+  fan_in:            {min_distinct_counterparties: 5, window_hours: 6, weight: 25}
+  fan_out:           {min_distinct_counterparties: 5, window_hours: 6, weight: 25}
+  rapid_pass_through: {min_credit_amount: 10000, window_minutes: 30, min_forward_ratio: 0.8, weight: 30}
+  velocity:          {min_entries: 8, window_minutes: 60, weight: 10}
+  high_turnover_24h: {min_turnover: 100000, weight: 10}
+  dormant_to_active: {dormant_days: 180, min_credit_amount: 50000, weight: 25}
+  layering:          {min_hops: 3, max_span_hours: 6, amount_ratio_min: 0.5, amount_ratio_max: 1.05, weight: 30}
+  circular_flow:     {min_len: 2, max_len: 6, max_span_hours: 24, weight: 30}
+  round_figure:      {min_count: 4, window_hours: 48, min_amount: 10000, step: 5000, weight: 10}
+scoring:
+  high: 60
+  medium: 30
+trail:
+  max_hops: 5
+  max_gap_hours: 72
+  lookback_hours: 24
+  max_paths: 500
+  dispersal_min_out: 3

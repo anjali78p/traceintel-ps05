@@ -1,0 +1,11 @@
+{
+  "victim_utr": "699999999001",
+  "chain": [
+    "VICTIM01",
+    "MULE01",
+    "MULE02",
+    "MULE03",
+    "CASHOUT01"
+  ],
+  "note": "SYNTHETIC DATA. Planted: chain+fan-in+fan-out at MULE01, circular LOOPX/Y/Z, dormant DORM01, round-figure ROUND01, negative control SALARY01, dirty rows in dirty_sample.csv."
+}
