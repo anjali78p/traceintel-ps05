@@ -10,14 +10,19 @@ paths — never proof of guilt or proven fund movement.
 | Two-layer model: ledger rows -> derived transfers (observed / one-sided / weak) with provenance | Implemented + tested |
 | Rules: fan-in, fan-out, rapid pass-through, velocity, 24h turnover, dormant->active, layering, circular, round-figure | Implemented + tested (configurable in `config.yaml`) |
 | Multi-hop trail from UTR/account (time-respecting, commingling flags, graph JSON for React Flow) | Implemented + tested |
+| Passive domain/IP enrichment (RDAP, DNS via DoH, crt.sh CT, Team Cymru ASN, PTR), SQLite cache, offline mode, honest per-source status | Logic implemented + tested on **synthetic fixtures**; **live lookups NOT yet verified** |
+| Suggested infrastructure relationships (shared IP / NS / ASN / certificate) with strength + caveat, never "strong" | Implemented + tested |
 | DB (SQLAlchemy), FastAPI, React UI | **Not yet** |
-| RDAP/DNS/CT/ASN enrichment, correlation graph, evidence register, PDF/Excel report, info-request drafts | **Not yet** |
+| Financial<->digital correlation, evidence register, PDF/Excel report, info-request drafts | **Not yet** |
 
 ## Run
     pip install -r requirements.txt
     python -m traceintel.synthetic                       # regenerate synthetic data
     python -m traceintel.cli data/synthetic/statements_all.csv --utr 699999999001
     python -m unittest discover -s tests -v              # or: pytest
+    python -m traceintel.infra.cli --demo                # synthetic offline demo of domain/IP intelligence
+    python -m traceintel.infra.cli --domain example.com --ip 93.184.216.34   # LIVE passive lookups (needs internet)
+    python -m traceintel.infra.cli --domain example.com --offline            # cache only
 
 ## Key design decisions
 - Statements are per-account ledgers, so rows are kept as-is (Layer 1) and account-to-account edges are *derived* (Layer 2).
@@ -31,3 +36,9 @@ paths — never proof of guilt or proven fund movement.
 Rules use configurable heuristics and can false-positive on legitimate activity (each finding states its limitation).
 Dormancy only works if history is in the statement. PDF support = ruled tables only (no OCR). Real R4C statement
 formats are unseen: add header aliases in `ingest.HEADER_ALIASES` once the sample arrives.
+
+## Infrastructure module notes
+- Passive only: queries public data services (rdap.org, dns.google DoH, crt.sh, Team Cymru DNS), never the suspect host.
+- Fixtures in `traceintel/infra/fixtures.py` are hand-written in the shape of real responses (reserved `.example` names,
+  documentation IP ranges); they are not recordings. Live behaviour must be verified before relying on it.
+- Registrant personal data is not retained (only a published/redacted flag). Geolocation = registration country, indicative.

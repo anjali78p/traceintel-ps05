@@ -22,3 +22,8 @@ trail:
   lookback_hours: 24
   max_paths: 500
   dispersal_min_out: 3
+infra:
+  ttl_hours: 24                 # cache freshness; older cache is served as 'stale' (never hidden) if live lookup fails/offline
+  new_domain_days: 30           # indicator threshold only
+  http_timeout_seconds: 10
+  min_interval_seconds: 1.0     # polite per-host rate limit for live lookups
