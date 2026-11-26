@@ -20,14 +20,14 @@ class UrllibHttp:
     def __init__(self, timeout=10, min_interval=1.0):
         self.timeout, self.min_interval, self._last = timeout, min_interval, {}
 
-    def get(self, url, headers=None) -> HttpResponse:
+    def get(self, url, headers=None, timeout=None) -> HttpResponse:
         host = urlparse(url).netloc
         wait = self.min_interval - (time.monotonic() - self._last.get(host, 0))
         if wait > 0:
             time.sleep(wait)
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json", **(headers or {})})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            with urllib.request.urlopen(req, timeout=timeout or self.timeout) as r:
                 return HttpResponse(r.status, r.read().decode("utf-8", "replace"))
         except urllib.error.HTTPError as e:
             return HttpResponse(e.code, "")

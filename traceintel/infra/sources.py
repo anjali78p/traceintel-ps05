@@ -4,12 +4,14 @@ from urllib.parse import quote
 RDAP_DOMAIN = "https://rdap.org/domain/{}"
 RDAP_IP = "https://rdap.org/ip/{}"
 DOH = "https://dns.google/resolve?name={}&type={}"
+CF_DOH = "https://cloudflare-dns.com/dns-query?name={}&type={}"
 CRT = "https://crt.sh/?q=%25.{}&output=json"
 
 
 def rdap_domain_url(d): return RDAP_DOMAIN.format(d)
 def rdap_ip_url(ip): return RDAP_IP.format(ip)
 def doh_url(name, rtype): return DOH.format(quote(name), rtype)
+def doh_url_cf(name, rtype): return CF_DOH.format(quote(name), rtype)
 def crt_url(d): return CRT.format(d)
 
 

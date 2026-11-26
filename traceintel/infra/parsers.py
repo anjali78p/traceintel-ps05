@@ -70,3 +70,10 @@ def parse_crt(body):
                       "not_before": _dt(r.get("not_before")), "not_after": _dt(r.get("not_after"))})
     certs.sort(key=lambda c: c["not_before"] or "")
     return {"count": len(certs), "certs": certs[:200]}
+
+
+def validate_doh(data):
+    """rcode 0 (ok) and 3 (NXDOMAIN) are valid DNS answers; anything else (e.g. 2 SERVFAIL) is a lookup failure."""
+    if data.get("rcode") not in (0, 3):
+        return f"DNS resolver returned rcode {data.get('rcode')} (lookup failed, not 'no data')"
+    return None

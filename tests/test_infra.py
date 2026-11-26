@@ -134,5 +134,79 @@ class Correlation(unittest.TestCase):
             self.assertTrue(r["caveat"] and r["evidence_refs"]); self.assertEqual(r["origin"], "automatic_suggestion")
 
 
+class Resilience(unittest.TestCase):
+    class Scripted:
+        """Returns the scripted responses in order for every URL, then repeats the last one."""
+        def __init__(self, *resps): self.resps, self.n = list(resps), 0
+        def get(self, url, headers=None, timeout=None):
+            self.timeouts = getattr(self, "timeouts", []) + [timeout]
+            r = self.resps[min(self.n, len(self.resps) - 1)]; self.n += 1; return r
+
+    def test_dns_servfail_is_error_not_ok_and_not_cached(self):
+        h = self.Scripted(HttpResponse(200, json.dumps({"Status": 2})))
+        c = Cache(); e = mk(h, c).enrich_ip(SHARED_IP)
+        self.assertEqual(e["observations"]["asn_origin"]["status"], "error")
+        self.assertIsNone(c.get(f"dns|{SHARED_IP}|CYMRU"))
+        self.assertIn("rcode 2", e["observations"]["asn_origin"]["note"])
+        self.assertIn("error", e["summary"]["asn_lookup"])
+
+    def test_dns_retry_recovers_from_transient_servfail(self):
+        ok = json.dumps({"Status": 0, "Answer": [{"name": "x.", "type": 12, "TTL": 1, "data": "host.example."}]})
+        h = self.Scripted(HttpResponse(200, json.dumps({"Status": 2})), HttpResponse(200, ok))
+        o = mk(h)._dns("k", "x", "PTR")
+        self.assertEqual(o["status"], "ok"); self.assertEqual(o["data"]["answers"][0]["data"], "host.example.")
+
+    def test_empty_answer_is_ok_but_explained(self):
+        o = mk().enrich_ip(OTHER_IP)["observations"]["ptr"]
+        self.assertEqual(o["status"], "ok"); self.assertIn("no records", o["note"])
+
+    def test_crt_uses_long_timeout_and_retries_once(self):
+        h = self.Scripted(HttpResponse(503, ""), HttpResponse(200, "[]"))
+        e = mk(h)
+        o = e._observe("crtsh", "x.example", "https://crt.sh/?q=x", parsers.parse_crt, timeout=30, retries=1)
+        self.assertEqual(o["status"], "ok"); self.assertEqual(h.timeouts, [30, 30])
+        self.assertEqual(e.crt_timeout, 30)
+
+    def test_crt_persistent_failure_reports_reason(self):
+        o = mk(self.Scripted(HttpResponse(503, "")))._observe("crtsh", "x.example", "u", parsers.parse_crt, retries=1)
+        self.assertEqual(o["status"], "error"); self.assertIn("HTTP 503", o["note"])
+
+
+class Fallback(unittest.TestCase):
+    class Split:
+        """Google DoH always SERVFAILs; Cloudflare DoH answers."""
+        def __init__(self, cf_ok=True): self.calls, self.cf_ok = [], cf_ok
+        def get(self, url, headers=None, timeout=None):
+            self.calls.append((url, headers))
+            if "dns.google" in url:
+                return HttpResponse(200, json.dumps({"Status": 2}))
+            if not self.cf_ok:
+                return HttpResponse(200, json.dumps({"Status": 2}))
+            return HttpResponse(200, json.dumps({"Status": 0, "Answer": [
+                {"name": "x.", "type": 16, "TTL": 1, "data": '"64496 | 203.0.113.0/24 | ZZ | arin | 2020-01-01"'}]}))
+
+    def test_fallback_resolver_used_and_disclosed(self):
+        h = self.Split(); o = mk(h)._dns("k", "x.example", "TXT")
+        self.assertEqual(o["status"], "ok"); self.assertIn("cloudflare-dns.com", o["url"])
+        self.assertIn("fallback resolver", o["note"])
+        self.assertTrue(any(hd == {"Accept": "application/dns-json"} for _, hd in h.calls))
+
+    def test_both_resolvers_failing_reports_error_with_both_reasons(self):
+        o = mk(self.Split(cf_ok=False))._dns("k", "x.example", "TXT")
+        self.assertEqual(o["status"], "error"); self.assertIn("fallback resolver also failed", o["note"])
+
+    def test_no_fallback_when_nxdomain(self):
+        h = FakeHttp({}); mk(h)._dns("k", "nothing.example", "A")      # 404 from fixtures -> not_found, not error
+        self.assertFalse(any("cloudflare" in u for u in h.calls))
+
+    def test_no_fallback_offline(self):
+        h = FakeHttp(); o = mk(h, offline=True)._dns("k", "x.example", "A")
+        self.assertEqual(h.calls, []); self.assertEqual(o["status"], "unavailable")
+
+    def test_asn_recovers_via_fallback(self):
+        e = mk(self.Split()).enrich_ip("203.0.113.10")
+        self.assertEqual(e["summary"]["asn"], "64496")
+
+
 if __name__ == "__main__":
     unittest.main()

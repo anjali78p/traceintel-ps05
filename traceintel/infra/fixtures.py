@@ -66,6 +66,6 @@ class FakeHttp:
     def __init__(self, responses=None):
         self.responses, self.calls = responses if responses is not None else build_responses(), []
 
-    def get(self, url, headers=None):
+    def get(self, url, headers=None, timeout=None):
         self.calls.append(url)
         return self.responses.get(url, HttpResponse(404, ""))

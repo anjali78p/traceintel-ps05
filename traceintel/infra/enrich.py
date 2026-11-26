@@ -1,7 +1,7 @@
 from __future__ import annotations
 import ipaddress
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from . import parsers, sources
 
@@ -17,12 +17,13 @@ class Enricher:
         self.http, self.cache, self.offline = http, cache, offline
         self.ttl = cfg["infra"]["ttl_hours"]
         self.new_days = cfg["infra"]["new_domain_days"]
+        self.crt_timeout = cfg["infra"].get("crt_timeout_seconds", 30)
         self._now = now
 
     def now(self):
-        return self._now or datetime.utcnow()
+        return self._now or datetime.now(timezone.utc).replace(tzinfo=None)
 
-    def _observe(self, source, query, url, parse):
+    def _observe(self, source, query, url, parse, validate=None, timeout=None, retries=0, headers=None):
         key = f"{source}|{query}"
         obs = {"ref": key, "source": source, "query": query, "url": url, "status": "unavailable",
                "retrieved_at": None, "age_hours": None, "data": None, "note": ""}
@@ -35,36 +36,60 @@ class Enricher:
             return obs
 
         if cached:
-            fresh = (self.now() - cached[0]).total_seconds() / 3600 <= self.ttl
-            if fresh:
+            if (self.now() - cached[0]).total_seconds() / 3600 <= self.ttl:
                 return from_cache("cached")
             if self.offline:
                 return from_cache("stale", "offline mode: serving older cached data")
         elif self.offline:
             obs["note"] = "offline mode and no cached result"
             return obs
-        try:
-            r = self.http.get(url)
-        except Exception as e:                      # network failure must never break the case
-            return from_cache("stale", f"live lookup failed ({type(e).__name__}); older cache shown") if cached \
-                else {**obs, "status": "error", "note": f"live lookup failed: {type(e).__name__}"}
-        if r.status == 200:
+        note, limited = "", False
+        for _ in range(1 + retries):
             try:
-                data = parse(r.body)
-            except Exception:
-                obs.update(status="error", note="response could not be parsed")
+                r = self.http.get(url, headers=headers, timeout=timeout)
+            except Exception as e:                  # network failure must never break the case
+                note = f"live lookup failed: {type(e).__name__}: {str(getattr(e, 'reason', e))[:120]}"
+                continue
+            if r.status == 200:
+                try:
+                    data = parse(r.body)
+                except Exception:
+                    note = "response could not be parsed"
+                    continue
+                bad = validate(data) if validate else None
+                if bad:
+                    note = bad
+                    continue
+                self.cache.put(key, self.now(), data)
+                obs.update(status="ok", retrieved_at=self.now().isoformat(), data=data, age_hours=0.0)
+                if isinstance(data, dict) and data.get("answers") == []:
+                    obs["note"] = f"no records returned (DNS rcode {data.get('rcode')}: 0=no data, 3=NXDOMAIN)"
                 return obs
-            self.cache.put(key, self.now(), data)
-            obs.update(status="ok", retrieved_at=self.now().isoformat(), data=data, age_hours=0.0)
-            return obs
-        if r.status == 404:
-            obs.update(status="not_found", retrieved_at=self.now().isoformat(), note="source has no record")
-            return obs
-        note = "rate limited by source" if r.status == 429 else f"source returned HTTP {r.status}"
+            if r.status == 404:
+                obs.update(status="not_found", retrieved_at=self.now().isoformat(), note="source has no record")
+                return obs
+            limited = r.status == 429
+            note = "rate limited by source" if limited else f"source returned HTTP {r.status}"
+            if limited:
+                break
         if cached:
             return from_cache("stale", note + "; older cache shown")
-        obs.update(status="rate_limited" if r.status == 429 else "error", note=note)
+        obs.update(status="rate_limited" if limited else "error", note=note)
         return obs
+
+    def _dns(self, query, name, rtype):
+        """Primary resolver (Google DoH); if it fails, fall back to Cloudflare DoH. Provenance records which one answered."""
+        o = self._observe("dns", query, sources.doh_url(name, rtype), parsers.parse_doh,
+                          validate=parsers.validate_doh, retries=1)
+        if self.offline or o["status"] not in ("error", "rate_limited", "stale"):
+            return o
+        o2 = self._observe("dns", query, sources.doh_url_cf(name, rtype), parsers.parse_doh,
+                           validate=parsers.validate_doh, retries=1, headers={"Accept": "application/dns-json"})
+        if o2["status"] == "ok":
+            o2["note"] = ("primary resolver failed (" + o["note"] + "); answered by fallback resolver (Cloudflare DoH)").strip()
+            return o2
+        o["note"] += f" | fallback resolver also failed: {o2['note']}"
+        return o
 
     # ---------- domain ----------
     def enrich_domain(self, domain):
@@ -73,8 +98,8 @@ class Enricher:
             raise ValueError(f"invalid domain: {domain!r}")
         o = {"rdap": self._observe("rdap_domain", d, sources.rdap_domain_url(d), parsers.parse_rdap_domain)}
         for t in RTYPES:
-            o[f"dns_{t}"] = self._observe("dns", f"{d}|{t}", sources.doh_url(d, t), parsers.parse_doh)
-        o["ct"] = self._observe("crtsh", d, sources.crt_url(d), parsers.parse_crt)
+            o[f"dns_{t}"] = self._dns(f"{d}|{t}", d, t)
+        o["ct"] = self._observe("crtsh", d, sources.crt_url(d), parsers.parse_crt, timeout=self.crt_timeout, retries=1)
 
         rd = (o["rdap"]["data"] or {})
         ips = sorted({a["data"] for t in ("A", "AAAA") for a in ((o[f"dns_{t}"]["data"] or {}).get("answers", []))
@@ -111,14 +136,14 @@ class Enricher:
     def enrich_ip(self, ip):
         ip = str(ipaddress.ip_address(ip.strip()))
         o = {"rdap": self._observe("rdap_ip", ip, sources.rdap_ip_url(ip), parsers.parse_rdap_ip),
-             "ptr": self._observe("dns", f"{ip}|PTR", sources.doh_url(sources.ptr_name(ip), "PTR"), parsers.parse_doh),
-             "asn_origin": self._observe("dns", f"{ip}|CYMRU", sources.doh_url(sources.cymru_origin_name(ip), "TXT"), parsers.parse_doh)}
+             "ptr": self._dns(f"{ip}|PTR", sources.ptr_name(ip), "PTR"),
+             "asn_origin": self._dns(f"{ip}|CYMRU", sources.cymru_origin_name(ip), "TXT")}
         asn = prefix = None
         ans = (o["asn_origin"]["data"] or {}).get("answers", [])
         if ans:
             f = parsers.parse_cymru_txt(ans[0]["data"])
             asn, prefix = f[0].split()[0], f[1] if len(f) > 1 else None
-            o["asn_name"] = self._observe("dns", f"AS{asn}|CYMRU", sources.doh_url(sources.cymru_asn_name(asn), "TXT"), parsers.parse_doh)
+            o["asn_name"] = self._dns(f"AS{asn}|CYMRU", sources.cymru_asn_name(asn), "TXT")
         as_name = None
         an = (o.get("asn_name", {}).get("data") or {}).get("answers", [])
         if an:
@@ -129,6 +154,7 @@ class Enricher:
         summary = {"asn": asn, "as_name": as_name, "bgp_prefix": prefix, "network_name": rd.get("network_name"),
                    "organisation": rd.get("organisation"), "registered_country": rd.get("registered_country"),
                    "reverse_dns": ptr,
+                   "asn_lookup": (o["asn_origin"]["status"] + (": " + o["asn_origin"]["note"] if o["asn_origin"]["note"] else "")) if not asn else "ok",
                    "note": "registered_country is the allocation record country, indicative only; not the user's location"}
         return {"type": "ip", "indicator": ip, "observations": o, "summary": summary, "indicators": [],
                 "timeline": [], "disclaimer": DISCLAIMER}

@@ -26,4 +26,5 @@ infra:
   ttl_hours: 24                 # cache freshness; older cache is served as 'stale' (never hidden) if live lookup fails/offline
   new_domain_days: 30           # indicator threshold only
   http_timeout_seconds: 10
+  crt_timeout_seconds: 30       # crt.sh is slow for popular domains
   min_interval_seconds: 1.0     # polite per-host rate limit for live lookups

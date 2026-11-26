@@ -31,6 +31,10 @@ def main(argv=None):
         s = e["summary"]
         st = {k: v["status"] for k, v in e["observations"].items()}
         print(f"\n[{e['type'].upper()}] {e['indicator']}\n  summary: {json.dumps(s, default=str)}\n  source status: {st}")
+        for k, v in e["observations"].items():
+            if v["status"] not in ("ok", "cached") or v["note"]:
+                mark = "i" if v["status"] in ("ok", "cached") else "!"
+                print(f"  {mark} {v['ref']}: {v['status']} - {v['note'] or 'no detail'}")
         for i in e["indicators"]:
             print(f"  indicator {i['code']} ({i['severity']}): {i['explanation']}")
     print("\nSUGGESTED RELATIONSHIPS (leads, not proof):")
