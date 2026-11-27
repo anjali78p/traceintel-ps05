@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRACEINTEL</title><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314213d'/><path d='M7 22l6-8 5 4 7-10' stroke='%23e0a94b' stroke-width='3' fill='none'/></svg>">
+<style>
+:root{--bg:#f4f1ea;--pn:#fbf9f4;--ink:#14213d;--mut:#6b6f7b;--ln:#ddd6c6;--hi:#9b2226;--md:#b7791f;--ok:#2d6a4f;--sg:#6d4c9f;--sh:0 1px 2px rgba(20,33,61,.06)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f131b;--pn:#171d28;--ink:#e8e4d8;--mut:#98a0b0;--ln:#2a3342;--hi:#ef7b7f;--md:#e0a94b;--ok:#6fcf97;--sg:#b79be0;--sh:none}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.serif,h1,h2{font-family:"Iowan Old Style",Palatino,Georgia,serif}.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+nav{position:sticky;top:0;height:100vh;padding:22px 14px;border-right:1px solid var(--ln);background:var(--pn);display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px 18px;font:700 19px Georgia,serif;letter-spacing:.02em}
+.brand small{display:block;font:500 10px system-ui;letter-spacing:.14em;color:var(--mut);text-transform:uppercase}
+nav a{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;color:var(--mut);text-decoration:none;font-weight:500;transition:.15s}
+nav a:hover{background:var(--bg);color:var(--ink)}nav a.on{background:var(--ink);color:var(--bg)}
+.note{margin-top:auto;padding:10px;font-size:11px;color:var(--mut);border-top:1px solid var(--ln)}
+main{padding:0 clamp(16px,3vw,40px) 60px;min-width:0}
+header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:18px 0;border-bottom:1px solid var(--ln);margin-bottom:26px}
+header .sp{flex:1}
+select,input,textarea,.btn{font:inherit;color:inherit;border:1px solid var(--ln);background:var(--pn);border-radius:8px;padding:8px 11px}
+.btn{cursor:pointer;font-weight:600;transition:.15s;text-decoration:none;display:inline-block}.btn:hover{border-color:var(--ink)}.btn:active{transform:translateY(1px)}
+.btn.p{background:var(--ink);color:var(--bg);border-color:var(--ink)}.btn[disabled]{opacity:.5;pointer-events:none}
+h1{font-size:30px;margin:0 0 4px;letter-spacing:-.01em}h2{font-size:18px;margin:30px 0 10px}p.sub{margin:0 0 22px;color:var(--mut);max-width:70ch}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.04em;border:1px solid currentColor}
+.HIGH{color:var(--hi)}.MEDIUM{color:var(--md)}.LOW{color:var(--mut)}.ok,.cached{color:var(--ok)}.stale,.unavailable,.rate_limited{color:var(--md)}.error,.not_found{color:var(--hi)}
+.tag{font:700 10px system-ui;letter-spacing:.1em;padding:2px 7px;border-radius:4px;color:#fff}.FACT{background:var(--ok)}.INDICATOR{background:var(--md)}.SUGGESTED{background:var(--sg)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--ln);border:1px solid var(--ln);border-radius:12px;overflow:hidden}
+.tile{background:var(--pn);padding:16px 18px}.tile b{display:block;font:600 34px Georgia,serif;line-height:1.1}.tile span{color:var(--mut);font-size:12px}
+.panel{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:16px 18px;box-shadow:var(--sh)}
+.tw{overflow-x:auto;border:1px solid var(--ln);border-radius:12px;background:var(--pn)}
+table{border-collapse:collapse;width:100%}th{font:700 11px system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);text-align:left}
+th,td{padding:10px 14px;border-bottom:1px solid var(--ln);vertical-align:top}tr:last-child td{border:0}
+tbody tr.cl{cursor:pointer}tbody tr.cl:hover{background:var(--bg)}
+.chip{display:inline-block;margin:2px 4px 2px 0;padding:1px 8px;border-radius:5px;background:var(--bg);border:1px solid var(--ln);font-size:11px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--ln)}.bar i{display:block}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;font-size:13px}.kv dt{color:var(--mut)}.kv dd{margin:0;word-break:break-word}
+.empty{text-align:center;padding:60px 20px;border:1px dashed var(--ln);border-radius:14px;color:var(--mut)}.empty h2{color:var(--ink);margin-top:0}
+.err{border:1px solid var(--hi);color:var(--hi);padding:14px 16px;border-radius:10px;background:var(--pn)}
+.sk{height:84px;border-radius:12px;background:linear-gradient(90deg,var(--ln),var(--pn),var(--ln));background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:12px}@keyframes sh{to{background-position:-200% 0}}
+.view{animation:in .25s ease}@keyframes in{from{opacity:0;transform:translateY(6px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+svg text{font-family:system-ui}.node{cursor:pointer}.node rect{fill:var(--pn);stroke:var(--ink);stroke-width:1.2}.node:hover rect{stroke-width:2.4}
+.edge{fill:none;stroke:var(--mut);stroke-width:1.6;cursor:pointer}.edge:hover{stroke-width:3.2}.edge.u{stroke-dasharray:5 4}.edge.dim{opacity:.15}.edge.on{stroke:var(--ink);stroke-width:2.6}
+details{border:1px solid var(--ln);border-radius:10px;background:var(--pn);margin-bottom:8px;padding:10px 14px}summary{cursor:pointer;font-weight:600}pre{white-space:pre-wrap;font:12px/1.5 ui-monospace,Consolas,monospace;margin:10px 0 0}
+#toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:9px;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;max-width:80vw}#toast.s{opacity:1;transform:none}
+@media(max-width:860px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:10px;border:0;border-bottom:1px solid var(--ln)}.brand,.note{display:none}nav a{white-space:nowrap}.grid2{grid-template-columns:1fr}}
+</style></head><body>
+<div class="app"><nav aria-label="Main">
+<div class="brand"><svg width="30" height="30" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#14213d"/><path d="M7 22l6-8 5 4 7-10" stroke="#e0a94b" stroke-width="3" fill="none"/></svg><div>TRACEINTEL<small>Evidence-linked intelligence</small></div></div>
+<a href="#overview">Overview</a><a href="#accounts">Mule Account Intelligence</a><a href="#trail">Money Trail</a><a href="#infra">Digital Infrastructure</a><a href="#evidence">Evidence &amp; Audit</a><a href="#reports">Reports &amp; Requests</a>
+<div class="note">Investigation-support tool. Indicators are review prompts, not proof of wrongdoing.</div></nav>
+<main><header><select id="case" aria-label="Case"></select><button class="btn" id="newc">New case</button><span id="syn"></span><span class="sp"></span><span id="chain" class="pill" title="Hash-chained audit log: tamper-evidence only, not legal chain-of-custody">audit …</span></header>
+<div id="v" class="view"></div></main></div><div id="toast" role="status"></div>
+<script>
+const BASE=location.protocol==='file:'?'http://127.0.0.1:8000':'';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=(s,e=document)=>e.querySelector(s);
+async function api(p,o){let r;try{r=await fetch(BASE+p,o)}catch{throw new Error('API unreachable. Start it with "uvicorn traceintel.api:app --reload" and open http://127.0.0.1:8000/ui/')}
+ if(!r.ok){let m=r.statusText;try{const j=await r.json();m=typeof j.detail==='string'?j.detail:JSON.stringify(j.detail)}catch{}throw new Error(m)}return r.json()}
+const ist=t=>t?new Date(t+(/Z|\+/.test(t)?'':'Z')).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour12:false})+' IST':'';
+const inr=n=>'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+const S={cid:null,cases:[],utr:''};let T;
+function toast(m){const t=$('#toast');t.textContent=m;t.className='s';clearTimeout(T);T=setTimeout(()=>t.className='',3400)}
+const head=(t,s)=>`<h1>${t}</h1><p class="sub">${s}</p>`;
+const empty=(t,s,b='')=>`<div class="empty"><h2>${t}</h2><p>${s}</p>${b}</div>`;
+const demoBtn='<button class="btn p" onclick="seed(this)">Load synthetic demo case</button>';
+const need=()=>empty('No case selected','Create a case or load the labelled synthetic demo to see the workspace.',demoBtn);
+async function seed(b){b.disabled=true;try{const c=await api('/demo/seed',{method:'POST'});S.utr='699999999001';await boot(c.id);toast('Synthetic demo case loaded')}catch(e){toast(e.message);b.disabled=false}}
+async function boot(sel){S.cases=await api('/cases');const s=$('#case');s.innerHTML=S.cases.map(c=>`<option value="${c.id}">${esc(c.case_number)} · ${esc(c.title)}</option>`).join('')||'<option>No cases</option>';
+ S.cid=sel||(S.cases.length?+s.value||S.cases[S.cases.length-1].id:null);if(S.cid)s.value=S.cid;const c=S.cases.find(x=>x.id==S.cid);
+ $('#syn').innerHTML=c&&c.is_synthetic?'<span class="pill MEDIUM">SYNTHETIC DATA</span>':'';chain();route()}
+async function chain(){const e=$('#chain');try{const v=await api('/audit/verify');e.textContent=v.valid?'audit chain valid':'audit chain BROKEN';e.className='pill '+(v.valid?'ok':'error')}catch{e.textContent='audit n/a';e.className='pill LOW'}}
+$('#case').onchange=e=>{S.cid=+e.target.value;const c=S.cases.find(x=>x.id==S.cid);$('#syn').innerHTML=c&&c.is_synthetic?'<span class="pill MEDIUM">SYNTHETIC DATA</span>':'';route()};
+$('#newc').onclick=async()=>{const t=prompt('Case title');if(!t)return;try{const c=await api('/cases',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t})});await boot(c.id);toast('Case created')}catch(e){toast(e.message)}};
+const V={};
+async function route(){const k=(location.hash||'#overview').slice(1);const f=V[k]||V.overview;
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+k));
+ const el=$('#v');el.innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
+ try{el.innerHTML=S.cid?await f():need();el.classList.remove('view');void el.offsetWidth;el.classList.add('view');if(S.cid&&V[k+'$'])V[k+'$']()}
+ catch(e){el.innerHTML=`<div class="err"><b>Could not load this view.</b><br>${esc(e.message)}<br><br><button class="btn" onclick="route()">Retry</button></div>`}}
+addEventListener('hashchange',route);
+const noRun=e=>/analysis/i.test(e.message)?null:Promise.reject(e);
+const runPrompt=()=>empty('No analysis yet','Import a statement on the Overview page, then run analysis.','<a class="btn p" href="#overview">Go to Overview</a>');
+
+V.overview=async()=>{const id=S.cid;const [c,acc,tr,ev]=await Promise.all([api(`/cases/${id}`),api(`/cases/${id}/accounts`).catch(noRun),api(`/cases/${id}/transfers`).catch(noRun),api(`/cases/${id}/evidence`)]);
+ const m=k=>tr?tr.filter(t=>t.method===k).length:0,n=tr?tr.length:0,w=k=>n?m(k)/n*100:0;
+ const rows=c.files.reduce((a,f)=>a+f.total,0);
+ return head(esc(c.title),`${esc(c.case_number)} · created ${esc(c.created_at)} UTC`)+
+ `<div class="tiles"><div class="tile"><b>${c.files.length}</b><span>Statements (${rows} rows)</span></div><div class="tile"><b>${tr?n:'–'}</b><span>Derived transfers</span></div>
+ <div class="tile"><b>${acc?acc.length:'–'}</b><span>Accounts for review${acc?` · ${acc.filter(a=>a.priority==='HIGH').length} high`:''}</span></div><div class="tile"><b>${ev.length}</b><span>Evidence items</span></div></div>`+
+ (tr?`<h2>Basis of transfers</h2><div class="panel"><div class="bar"><i style="width:${w('utr_both_sides')}%;background:var(--ok)"></i><i style="width:${w('utr_one_side')}%;background:var(--md)"></i><i style="width:${w('counterparty_only')}%;background:var(--hi)"></i></div>
+ <p class="mono" style="margin:10px 0 0"><span class="ok">■</span> ${m('utr_both_sides')} observed in both statements &nbsp; <span class="MEDIUM">■</span> ${m('utr_one_side')} one side only (unverified) &nbsp; <span class="error">■</span> ${m('counterparty_only')} counterparty text only (weak)</p></div>`:'')+
+ (acc&&acc.length?`<h2>Highest review priority</h2><div class="tw"><table><tbody>${acc.slice(0,4).map(a=>`<tr class="cl" onclick="location.hash='#accounts'"><td><b>${esc(a.account)}</b></td><td><span class="pill ${a.priority}">${a.priority}</span></td><td>${a.score}</td><td>${a.rules.map(r=>`<span class="chip">${esc(r)}</span>`).join('')}</td></tr>`).join('')}</tbody></table></div>`:
+  `<h2>Next step</h2>${tr?'<p class="sub">No indicators triggered at configured thresholds.</p>':runPrompt().replace('Go to Overview','')}`)+
+ `<h2>Import &amp; analyse</h2><div class="panel"><form id="up" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="file" name="file" required accept=".csv,.xlsx,.pdf"><input name="bank_name" placeholder="Bank name" value="UNSPECIFIED"><input name="default_account" placeholder="Account (if file has no account column)">
+ <button class="btn p">Import statement</button><button type="button" class="btn" id="an">Run analysis</button></form><p class="mono" id="upm" style="margin:10px 0 0;color:var(--mut)">Rows with problems are kept and flagged, never dropped. Identical files are rejected.</p></div>`};
+V['overview$']=()=>{$('#up').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);if(!fd.get('default_account'))fd.delete('default_account');
+  try{const r=await api(`/cases/${S.cid}/files`,{method:'POST',body:fd});$('#upm').textContent=r.status==='imported'?`Imported ${r.counts.ok} ok, ${r.counts.invalid} invalid, ${r.counts.duplicate} duplicate rows; ${r.problem_count} warnings. Evidence ${r.evidence_id}.`:r.message;toast(r.status==='imported'?'Statement imported':'Duplicate file rejected');chain()}catch(x){toast(x.message)}};
+ $('#an').onclick=async()=>{try{const r=await api(`/cases/${S.cid}/analyze`,{method:'POST'});toast(`Analysis run ${r.run_id}: ${r.findings} indicators on ${r.accounts_flagged} accounts`);chain();route()}catch(x){toast(x.message)}}};
+
+V.accounts=async()=>{const a=await api(`/cases/${S.cid}/accounts`).catch(noRun);if(!a)return runPrompt();if(!a.length)return head('Mule Account Intelligence','')+empty('Nothing flagged','No rule triggered at the configured thresholds.');
+ window._acc=a;return head('Mule Account Intelligence','Explainable, rule-based review priority. Each indicator lists its evidence and limitation. <span class="tag INDICATOR">INDICATOR</span>')+
+ `<div class="grid2"><div class="tw"><table><thead><tr><th>Account</th><th>Priority</th><th>Score</th><th>Rules</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="cl" data-i="${i}"><td><b>${esc(x.account)}</b></td><td><span class="pill ${x.priority}">${x.priority}</span></td><td><div class="bar" style="width:70px"><i style="width:${x.score}%;background:var(--${x.priority==='HIGH'?'hi':'md'})"></i></div>${x.score}</td><td>${x.rules.map(r=>`<span class="chip">${esc(r)}</span>`).join('')}</td></tr>`).join('')}</tbody></table></div>
+ <aside class="panel" id="det"><p style="color:var(--mut)">Select an account to see why it was flagged.</p></aside></div>`};
+V['accounts$']=()=>{const show=i=>{const x=window._acc[i];$('#det').innerHTML=`<h2 style="margin-top:0">${esc(x.account)}</h2><span class="pill ${x.priority}">${x.priority} · ${x.score}</span>`+x.findings.map(f=>`<h3 style="font-size:14px;margin:16px 0 4px">${esc(f.title)}</h3><p style="margin:0 0 6px">${esc(f.explanation)}</p><p class="mono" style="margin:0 0 6px">Evidence: ${f.transfer_ids.length?'transfers '+f.transfer_ids.slice(0,14).join(', '):'ledger entries '+f.entry_ids.slice(0,14).join(', ')}<br>UTRs: ${esc(f.utrs.slice(0,6).join(', ')||'n/a')}</p><p style="margin:0;color:var(--mut);font-size:12px">Limitation: ${esc(f.limitation)}</p>`).join('')+`<p style="margin-top:16px;font-size:11px;color:var(--mut)">${esc(x.disclaimer)}</p>`;
+ document.querySelectorAll('#v tbody tr').forEach(r=>r.style.background=r.dataset.i==i?'var(--bg)':'')};
+ document.querySelectorAll('#v tbody tr').forEach(r=>r.onclick=()=>show(+r.dataset.i));if(window._acc[0])show(0)};
+
+V.trail=()=>head('Money Trail','Possible transaction paths reconstructed from records. Not proven fund movement. <span class="tag SUGGESTED">SUGGESTED</span>')+
+ `<form id="tf" class="panel" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px"><input id="tu" placeholder="Victim UTR" value="${esc(S.utr)}" style="flex:1;min-width:200px" class="mono"><input id="ta" placeholder="…or start account" style="width:180px"><input id="th" type="number" min="1" max="8" placeholder="Max hops" style="width:110px"><button class="btn p">Trace</button></form><div id="tr">${empty('Enter a UTR','Start from a victim transaction (UTR) or an account.')}</div>`;
+V['trail$']=()=>{$('#tf').onsubmit=async e=>{e.preventDefault();const u=$('#tu').value.trim(),a=$('#ta').value.trim(),h=$('#th').value;if(!u&&!a)return toast('Provide a UTR or account');S.utr=u;
+ const q=new URLSearchParams();u?q.set('utr',u):q.set('account',a);if(h)q.set('max_hops',h);$('#tr').innerHTML='<div class="sk"></div>';
+ try{const r=await api(`/cases/${S.cid}/trail?${q}`);$('#tr').innerHTML=r.found?graph(r):empty('No match',esc(r.message||'No transfer matches.'));if(r.found)wire(r);chain()}catch(x){$('#tr').innerHTML=`<div class="err">${esc(x.message)}</div>`}};if(S.utr)$('#tf').requestSubmit()};
+let GR;function graph(r){const E=r.graph.edges,N=r.graph.nodes,d={};const org=N.filter(n=>n.roles.includes('origin')).map(n=>n.id);(org.length?org:[E[0].source]).forEach(o=>d[o]=0);
+ for(let k=0;k<10;k++)E.forEach(e=>{if(d[e.source]!==undefined&&(d[e.target]===undefined||d[e.target]<d[e.source]+1)&&d[e.source]+1<=10)d[e.target]=d[e.source]+1});N.forEach(n=>{if(d[n.id]===undefined)d[n.id]=0});
+ const cols={};N.forEach(n=>(cols[d[n.id]]=cols[d[n.id]]||[]).push(n));const nc=Math.max(...Object.keys(cols))+1,nr=Math.max(...Object.values(cols).map(c=>c.length)),W=nc*210+60,H=nr*70+50,P={};
+ Object.entries(cols).forEach(([c,l])=>l.forEach((n,i)=>P[n.id]={x:30+c*210,y:30+i*70+(nr-l.length)*35}));GR={r,P};
+ const col=n=>n.roles.includes('origin')?'var(--md)':n.roles.includes('terminal')?'var(--hi)':n.roles.includes('dispersal')||n.roles.includes('convergence')?'var(--sg)':'var(--ink)';
+ return `<div class="panel" style="padding:0"><div style="padding:12px 16px;border-bottom:1px solid var(--ln)">${r.paths.slice(0,12).map((p,i)=>`<button class="btn pc" data-i="${i}" style="margin:2px;padding:3px 9px;font-size:12px">${p.hops} hops · ${esc(p.accounts[p.accounts.length-1])}</button>`).join('')}<button class="btn pc" data-i="-1" style="margin:2px;padding:3px 9px;font-size:12px">All</button>
+ <span class="mono" style="margin-left:8px;color:var(--mut)">dashed = unverified (one side only) · solid = seen in both statements</span></div>
+ <div style="overflow-x:auto"><svg id="g" width="${W}" height="${H}" role="img" aria-label="Money trail graph"><defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="currentColor"/></marker></defs><g style="color:var(--mut)">
+ ${E.map(e=>{const a=P[e.source],b=P[e.target],x1=a.x+130,y1=a.y+19,x2=b.x,y2=b.y+19,mx=(x1+x2)/2;return `<g><path class="edge ${e.observed?'':'u'}" data-t="${e.transfer_id}" d="M${x1} ${y1}C${mx} ${y1} ${mx} ${y2} ${x2-2} ${y2}" marker-end="url(#ar)"/><text x="${mx}" y="${(y1+y2)/2-5}" font-size="10" text-anchor="middle" fill="var(--ink)">${inr(e.amount_inr)}</text></g>`}).join('')}</g>
+ ${N.map(n=>`<g class="node" data-n="${esc(n.id)}" tabindex="0"><rect x="${P[n.id].x}" y="${P[n.id].y}" width="130" height="38" rx="8"/><rect x="${P[n.id].x}" y="${P[n.id].y}" width="5" height="38" rx="2" style="fill:${col(n)};stroke:none"/><text x="${P[n.id].x+14}" y="${P[n.id].y+16}" font-size="12" font-weight="700" fill="var(--ink)">${esc(n.id.length>14?n.id.slice(0,13)+'…':n.id)}</text><text x="${P[n.id].x+14}" y="${P[n.id].y+30}" font-size="9" fill="var(--mut)">${esc(n.roles.join(' · ')||'intermediate')}</text></g>`).join('')}</svg></div>
+ <div id="gd" style="padding:14px 16px;border-top:1px solid var(--ln);font-size:13px">${esc(r.paths.length)} possible path(s). Click a node or an edge for transaction details.${r.truncated?' (path list truncated)':''}</div></div>`}
+function wire(r){const E={};r.graph.edges.forEach(e=>E[e.transfer_id]=e);const det=e=>`<b>${esc(e.source)} → ${esc(e.target)}</b> · ${inr(e.amount_inr)} · ${ist(e.ts_utc)}<br><span class="mono">T${e.transfer_id} · UTR ${esc(e.utr||'n/a')} · ${esc(e.method)} · ${e.observed?'<span class="ok">FACT: seen in both statements</span>':'<span class="MEDIUM">unverified: counterparty text only</span>'}</span>`;
+ document.querySelectorAll('.edge').forEach(x=>x.onclick=()=>$('#gd').innerHTML=det(E[x.dataset.t]));
+ document.querySelectorAll('.node').forEach(x=>x.onclick=()=>{const id=x.dataset.n;$('#gd').innerHTML=`<b>${esc(id)}</b><br>`+r.graph.edges.filter(e=>e.source===id||e.target===id).map(e=>`<div style="margin-top:6px">${det(e)}</div>`).join('')});
+ document.querySelectorAll('.pc').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,p=i<0?null:r.paths[i];document.querySelectorAll('.edge').forEach(x=>{const on=p&&p.transfer_ids.includes(+x.dataset.t);x.classList.toggle('on',!!on);x.classList.toggle('dim',!!p&&!on)});
+  $('#gd').innerHTML=p?`<b>${esc(p.accounts.join(' → '))}</b><br><span class="mono">${p.hops} hops · ${p.span_minutes} min · upper-bound carried: ${p.carried_upper_bound_inr.map(inr).join(' › ')} · ${esc(p.attribution)}${p.circular?' · circular':''}</span>${p.commingled_hops.map(h=>`<br><span class="MEDIUM">Commingled at ${esc(h.account)}: also received ${inr(h.other_inflow_inr)} in ${h.other_inflow_count} other transfer(s) shortly before forwarding; exact attribution not possible.</span>`).join('')}`:'Showing all paths.'})}
+
+V.infra=async()=>{const d=await api(`/cases/${S.cid}/infrastructure`);const E=d.enrichments,R=d.suggested_relationships;
+ const form=`<form id="ef" class="panel" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px"><input id="ed" placeholder="Domains (comma separated)" style="flex:2;min-width:220px"><input id="ei" placeholder="IPs (comma separated)" style="flex:1;min-width:160px"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="eo"> cache only</label><button class="btn p">Run passive lookup</button></form>`;
+ const st=o=>Object.entries(o).map(([k,v])=>`<span class="chip ${v.status}" title="${esc(v.note||v.url)}">${esc(k)}: ${v.status}</span>`).join('');
+ const card=e=>{const s=e.summary,rows=e.type==='domain'?[['Registered',`${s.registered||'–'} (age ${s.age_days??'–'} d)`],['Expires',s.expires||'–'],['Registrar',s.registrar||'–'],['Registrant data',s.registrant_info],['Name servers',(s.nameservers||[]).join(', ')],['Resolved IPs',(s.ips||[]).join(', ')],['Certificates',`${s.certificate_count}`]]:[['ASN',s.asn?`AS${s.asn} ${s.as_name}`:esc(s.asn_lookup||'–')],['Prefix',s.bgp_prefix||'–'],['Network',`${s.network_name||'–'} / ${s.organisation||'–'}`],['Registered country',(s.registered_country||'–')+' (indicative)'],['Reverse DNS',(s.reverse_dns||[]).join(', ')||'none']];
+  return `<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px"><b class="mono" style="font-size:13px">${esc(e.indicator)}</b><span class="chip">${e.type}</span></div><dl class="kv" style="margin:10px 0">${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>${e.indicators.map(i=>`<p style="margin:4px 0;font-size:12px"><span class="pill MEDIUM">${esc(i.code)}</span> ${esc(i.explanation)}</p>`).join('')}<div>${st(e.observations)}</div></div>`};
+ return head('Digital Infrastructure','Passive public sources only (RDAP, DNS, CT, ASN). Hosting and geolocation are indicative, not proof of identity or location. <span class="tag FACT">FACT</span>')+form+
+ (E.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px">${E.map(card).join('')}</div>`:empty('No lookups yet','Run a passive lookup above.'))+
+ `<h2>Suggested relationships <span class="tag SUGGESTED">SUGGESTED</span></h2>`+(R.length?`<div class="tw"><table><thead><tr><th>Type</th><th>Strength</th><th>Entities</th><th>Via</th><th>Caveat</th></tr></thead><tbody>${R.map(r=>`<tr><td>${esc(r.type)}</td><td><span class="pill ${r.strength==='moderate'?'MEDIUM':'LOW'}">${esc(r.strength)}</span></td><td>${r.entities.map(x=>`<span class="chip">${esc(x)}</span>`).join('')}</td><td class="mono">${esc(r.value)}</td><td style="font-size:12px;color:var(--mut)">${esc(r.caveat)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub">No shared infrastructure suggested.</p>')+
+ `<p class="sub" style="margin-top:12px">Links between bank accounts and domains/IPs are not established automatically; they need investigator-supplied evidence.</p>`};
+V['infra$']=()=>{$('#ef').onsubmit=async e=>{e.preventDefault();const l=s=>s.split(',').map(x=>x.trim()).filter(Boolean),b={domains:l($('#ed').value),ips:l($('#ei').value),offline:$('#eo').checked};if(!b.domains.length&&!b.ips.length)return toast('Enter a domain or IP');
+ const btn=e.submitter;btn.disabled=true;try{const r=await api(`/cases/${S.cid}/enrich`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});toast(`Stored ${r.stored} indicator(s)`);chain();route()}catch(x){toast(x.message);btn.disabled=false}}};
+
+V.evidence=async()=>{const [ev,au]=await Promise.all([api(`/cases/${S.cid}/evidence`),api(`/cases/${S.cid}/audit`)]);
+ return head('Evidence &amp; Audit','Every import, analysis, lookup and report is registered with a SHA-256 where a file exists. The audit log is hash-chained (tamper-evidence only; not legal chain-of-custody).')+
+ `<h2 style="margin-top:0">Evidence register</h2><div class="tw"><table><thead><tr><th>ID</th><th>Type</th><th>Description</th><th>SHA-256</th><th>Created (UTC)</th></tr></thead><tbody>${ev.map(e=>`<tr><td class="mono">${esc(e.evidence_id)}</td><td><span class="chip">${esc(e.type)}</span></td><td>${esc(e.description)}</td><td class="mono" title="${esc(e.sha256)}">${esc((e.sha256||'').slice(0,16))}</td><td class="mono">${esc(e.created_at)}</td></tr>`).join('')||'<tr><td colspan="5">No evidence yet.</td></tr>'}</tbody></table></div>
+ <h2>Audit trail</h2><div class="tw"><table><thead><tr><th>#</th><th>Time (UTC)</th><th>Action</th><th>Detail</th><th>Hash</th></tr></thead><tbody>${au.slice().reverse().map(a=>`<tr><td>${a.id}</td><td class="mono">${esc(a.ts)}</td><td><b>${esc(a.action)}</b></td><td class="mono" style="max-width:420px;word-break:break-word">${esc(JSON.stringify(a.detail)).slice(0,220)}</td><td class="mono">${esc(a.hash.slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`};
+
+V.reports=()=>head('Reports &amp; Requests','Generate the evidence-backed PDF/Excel report and review draft information requests. Drafts are never issued by this tool; an authorised officer issues them through the applicable legal process.')+
+ `<div class="panel" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="ru" class="mono" placeholder="Victim UTR (needed for trail and bank drafts)" value="${esc(S.utr)}" style="flex:1;min-width:220px"><a class="btn p" id="rp" target="_blank">Open PDF report</a><a class="btn" id="rx" target="_blank">Download Excel</a><button class="btn" id="rq">Preview draft requests</button></div><div id="rl" style="margin-top:18px"></div>`;
+V['reports$']=()=>{const u=()=>{const v=$('#ru').value.trim(),q=v?'?victim_utr='+encodeURIComponent(v):'';S.utr=v;$('#rp').href=`${BASE}/cases/${S.cid}/report.pdf${q}`;$('#rx').href=`${BASE}/cases/${S.cid}/report.xlsx${q}`;return q};u();$('#ru').oninput=u;
+ document.querySelectorAll('#rp,#rx').forEach(a=>a.addEventListener('click',()=>setTimeout(chain,1500)));
+ $('#rq').onclick=async()=>{const q=u();$('#rl').innerHTML='<div class="sk"></div>';try{const r=await api(`/cases/${S.cid}/requests${q}`);$('#rl').innerHTML=r.length?r.map(x=>`<details><summary>${esc(x.id)} · ${esc(x.type)} → ${esc(x.to)}</summary><pre>${esc(x.body)}</pre></details>`).join(''):empty('No drafts','Needs a victim UTR with a matching trail and/or domain/IP lookups.')}catch(e){$('#rl').innerHTML=`<div class="err">${esc(e.message)}</div>`}}};
+boot().catch(e=>{$('#v').innerHTML=`<div class="err"><b>${esc(e.message)}</b></div>`});
+</script></body></html>

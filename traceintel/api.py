@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -178,3 +179,13 @@ def report_xlsx(cid: int, victim_utr: Optional[str] = None):
 def info_requests(cid: int, victim_utr: Optional[str] = None):
     """Draft information requests (bank/registrar/hosting). Drafts only; issued by an authorised officer via legal process."""
     return _guard(collect, svc, cid, victim_utr)["requests"]
+
+
+FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
+if FRONTEND.exists():
+    app.mount("/ui", StaticFiles(directory=str(FRONTEND), html=True), name="ui")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/ui/")

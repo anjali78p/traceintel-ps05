@@ -126,12 +126,16 @@ def rule_pass_through(transfers, cfg):
             tids = sorted({c.transfer_id for c, _, _ in hits} | {d.transfer_id for _, ds, _ in hits for d in ds})
             delays = [round((ds[0].ts_utc - c.ts_utc).total_seconds() / 60, 1) for c, ds, _ in hits]
             first = hits[0]
+            c0, ds0, f0 = first
+            span = round((ds0[-1].ts_utc - c0.ts_utc).total_seconds() / 60, 1)
+            over = (f" The forwarded total exceeds this credit, so the account also held other funds; "
+                    f"the debits cannot be attributed to this credit alone.") if f0 > c0.amount_paise else ""
             out.append(Finding(
                 acct, "RAPID_PASS_THROUGH", rc["weight"],
                 f"Rapid pass-through: {len(hits)} credit(s) forwarded within {rc['window_minutes']} min",
-                f"Credit of INR {inr(first[0].amount_paise):,.2f} (UTR {first[0].utr or 'n/a'}) at {_fmt(first[0].ts_utc)} "
-                f"was followed by {len(first[1])} debit(s) totalling INR {inr(first[2]):,.2f} within "
-                f"{delays[0]} min. Rule: >= {int(rc['min_forward_ratio'] * 100)}% of a credit >= INR "
+                f"Credit of INR {inr(c0.amount_paise):,.2f} (UTR {c0.utr or 'n/a'}) at {_fmt(c0.ts_utc)} "
+                f"was followed by {len(ds0)} debit(s) totalling INR {inr(f0):,.2f}: the first after {delays[0]} min, "
+                f"the last after {span} min.{over} Rule: >= {int(rc['min_forward_ratio'] * 100)}% of a credit >= INR "
                 f"{rc['min_credit_amount']:,} forwarded within {rc['window_minutes']} min (refunds to the sender excluded).",
                 tids, [], _utrs([t for t in transfers if t.transfer_id in tids]),
                 {"hits": [{"credit_transfer": c.transfer_id, "debit_transfers": [d.transfer_id for d in ds],
