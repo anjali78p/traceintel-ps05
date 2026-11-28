@@ -1,174 +1,97 @@
-# Hotel F&B CostGuard
+# TRACEINTEL
 
-A cloud-ready control tower for hotel food, beverage and liquor cost, inventory exceptions, banquet profitability and revenue-control checks (voids, discounts, NC and amenities). It turns daily CSV records into validated data, KPIs, exception flags and recommended corrective actions.
+**From fragmented evidence to connected, explainable, auditable cybercrime intelligence.**
+Built for the Rajasthan Police Cyber Security Hackathon 2026, Problem Statement **PS05: Financial Crime Infrastructure & Money-Trail Analysis**.
 
-> **Fabricated data only.** All records in this repo are dummy data. Never commit real guest, employee, supplier or hotel financial data, and never commit access keys or passwords.
+![tests](https://github.com/anjali78p/traceintel-ps05/actions/workflows/tests.yml/badge.svg)
 
-## What it does
+> Investigation-support tool, not an autonomous decision system. It produces **review-priority indicators** and **possible transaction paths**;
+> it never declares guilt or proves fund movement. **Synthetic data only.**
 
-| Module | What the dashboard shows |
+<!-- Add after deploying: **Live demo:** https://YOUR-APP.onrender.com -->
+<!-- Add screenshots to docs/screenshots/ and reference them here: money trail, accounts, infrastructure, report -->
+
+## The problem
+A victim loses money; it hops through mule accounts while the fraud runs on disposable domains and cloud servers. Investigators receive bank
+statements, IPs and domains from different sources in different formats, and must connect them by hand before sending lawful requests.
+
+## What TRACEINTEL does
+| Capability | How |
 |---|---|
-| Overview | F&B cost %, void, discount, NC and amenities totals, stock variance, banquet gross profit |
-| Checks & Revenue Control | Void, discount, NC and amenities KPI cards, outlet and reason charts, transaction-level tables with review flags |
-| Cost analysis | Consumption cost and cost % for Food, Beverage and overall |
-| Inventory | Expected closing, book vs physical count, variance quantity and value |
-| Banquet profitability | Net revenue, direct costs, gross profit and margin per event |
-| Corrective actions | Priority, evidence, likely cause, owner and recommended action for every exception |
-| Upload data | Upload a CSV, validate it, and see the result on the dashboard |
+| **Ingest statements** | CSV / XLSX / ruled-table PDF into one schema; per-row validation, balance check, duplicate-UTR detection. Bad rows are flagged, **never dropped**. |
+| **Mule-account indicators** | 9 transparent, configurable rules (fan-in/out, rapid pass-through, velocity, 24h turnover, dormant-to-active, layering, circular flow, round figures). Every indicator shows its evidence, UTRs and limitation. |
+| **Money trail from a UTR** | Time-respecting multi-hop paths from real records; each transfer stays individual; commingling is flagged; labelled *possible path, not proven fund movement*. |
+| **Domain & IP intelligence** | Passive only: RDAP, DNS (with fallback resolver), Certificate Transparency, ASN. Cached, offline-capable, honest per-source status. No scanning or probing. |
+| **Financial ↔ digital links** | Entered **only by the investigator**, with explanation + cited source; retract-not-delete; context and *suggested* leads shown with caveats. |
+| **Evidence & audit** | Evidence register with SHA-256; hash-chained audit log (tamper-evidence only; not legal chain-of-custody). |
+| **Reports & lawful requests** | PDF + Excel report (facts / indicators / suggested / investigator, methodology, limitations) and **draft** information requests for banks, registrars and hosting providers, to be issued by an authorised officer through legal process. |
 
-Flags mean **"review needed"**, not misconduct. NC and amenities are reported separately, and an amenity that is also booked as an NC is counted once in the combined total.
+### Design principles
+1. **Observed facts, indicators, inferences and investigator conclusions are always labelled differently.**
+2. Two layers: statement rows exactly as seen, and *derived* transfers with provenance (seen in both statements vs one side only).
+3. Relationships are never fabricated; shared hosting, CDNs and common name servers are weak leads, never proof.
+4. Non-public records (subscriber, KYC, login) are **requested through lawful process, never presented as public data**.
+5. Thresholds are configurable (`config.yaml`) and each run stores the config it used.
 
-## How it works
-
+## Architecture
+```mermaid
+flowchart LR
+  A["Bank statements<br/>CSV · XLSX · PDF"] --> B["Ingestion & validation"]
+  B --> C[("Ledger rows<br/>kept as observed")]
+  C --> D["Transfer matching<br/>UTR both-sides / one-side"]
+  D --> E["Rule engine<br/>9 explainable indicators"]
+  D --> F["Money-trail engine<br/>time-respecting paths"]
+  G["Domains & IPs"] --> H["Passive intelligence<br/>RDAP · DNS · CT · ASN"]
+  H --> I["Suggested infrastructure<br/>relationships"]
+  J["Investigator links<br/>with cited evidence"] --> K["Case workspace<br/>FastAPI + web UI"]
+  E --> K
+  F --> K
+  I --> K
+  K --> L["PDF / Excel report<br/>+ draft lawful requests"]
+  K --> M[("Evidence register<br/>hash-chained audit log")]
 ```
-CSV upload (or sample_data/)
-  -> validation.py       checks columns, types, dates, negatives, duplicates
-  -> data_access.py      loads data, applies date and outlet filters
-  -> calculations.py     variance, cost %, banquet profit, check totals, flags
-  -> recommendations.py  turns flags into evidence, cause, owner, action
-  -> FastAPI endpoints   JSON for the dashboard
-  -> frontend            KPI cards, Chart.js charts, tables
-```
+Modular monolith: Python 3.12, FastAPI, SQLite (stdlib), pandas / openpyxl / pdfplumber, ReportLab, a dependency-free single-file web UI.
 
 ## Quick start
-
-Requires Python 3.11 or newer.
-
 ```bash
-git clone https://github.com/anjali78p/hotel-fnb-costguard.git
-cd hotel-fnb-costguard
 pip install -r requirements.txt
-python -m pytest -q
-uvicorn backend.main:app --reload
+python -m unittest discover -s tests           # 100+ tests
+uvicorn traceintel.api:app --reload            # open http://127.0.0.1:8000/ui/  ->  "Load synthetic demo case"
+python -m traceintel.report_cli --out reports  # demo PDF + Excel + draft requests without the UI
 ```
+Windows/VS Code users: see [`RUN_GUIDE.md`](RUN_GUIDE.md). Deployment: [`DEPLOY.md`](DEPLOY.md).
 
-Open the server URL in a browser. The dashboard is served at `/` and the interactive API docs at `/docs`. In GitHub Codespaces, use the "Open in Browser" popup.
+**Demo flow (≈3 min):** Load demo case → *Mule Account Intelligence* (click MULE01: why it was flagged) → *Money Trail* (UTR `699999999001`, Trace; dashed = unverified)
+→ *Digital Infrastructure* (shared IP/NS between two scam-like domains; the unrelated domain is not linked) → *Financial ↔ Digital Links* (record a cited link)
+→ *Evidence & Audit* → *Reports* (PDF, Excel, draft requests).
 
-If `/` shows a 404, the dashboard mount is missing from `backend/main.py`. Add these lines at the end of the file:
+## Synthetic scenario (planted, with negative controls)
+Victim → MULE01 → MULE02 → MULE03 → CASHOUT01, with fan-in (8 senders) and fan-out (5 recipients) at MULE01, a circular flow, a dormant account that wakes up,
+round-figure layering, and a **salary account that must not be flagged**. Tests assert the exact accounts and UTRs.
 
-```python
-# Serve dashboard
-import pathlib
-from fastapi.staticfiles import StaticFiles
-app.mount("/", StaticFiles(directory=pathlib.Path(__file__).resolve().parent.parent / "frontend", html=True), name="frontend")
-```
-
-`patch_main.py` and `patch_day6.py` are one-time helper scripts that register the cost and upload routers in `backend/main.py`. They are safe to run again and do nothing if already applied.
-
-## Project structure
-
-```
-hotel-fnb-costguard/
-  backend/
-    main.py              FastAPI app and core endpoints
-    cost_api.py          /api/cost endpoint
-    upload_api.py        upload, status and reset endpoints
-    validation.py        CSV validation (reusable in AWS Lambda)
-    calculations.py      all business formulas
-    recommendations.py   flag -> recommended action mapping
-    data_access.py       data loader (CSV now, RDS later)
-    config.py            configurable limits (placeholders)
-  frontend/              index.html, style.css, dashboard.js
-  sample_data/           dummy CSVs with planted test cases
-    invalid/             bad files for validation tests
-  database/schema.sql    draft PostgreSQL schema
-  docs/                  data dictionary, expected results, hand-check script
-  tests/                 45 automated tests
-  .github/workflows/     CI: runs pytest on every push and pull request
-```
-
-## API
-
-All endpoints are GET unless noted. Dates use `YYYY-MM-DD`. Currency is INR.
-
-| Endpoint | Filters | Returns |
-|---|---|---|
-| `/api/dashboard` | date_from, date_to, outlet | Overview totals |
-| `/api/voids` | date_from, date_to, outlet | KPI, rows, duplicates, repeat patterns |
-| `/api/discounts` | date_from, date_to, outlet, limit_pct | KPI, average discount %, rows with flags |
-| `/api/nc-checks` | date_from, date_to, outlet | KPI, rows with flags |
-| `/api/amenities` | date_from, date_to, outlet | KPI, rows with flags |
-| `/api/inventory` | date_from, date_to, outlet | Stock variance rows and net value |
-| `/api/banquets` | date_from, date_to | Event profit and margin |
-| `/api/invoices` | none | Duplicate invoices and rate mismatches |
-| `/api/cost` | date_from, date_to | Cost % by category and item |
-| `/api/alerts` | date_from, date_to, outlet, priority | Corrective actions, High first |
-| `POST /api/upload` | form: file, file_type | Validation result |
-| `/api/uploads`, `/api/uploads/{id}` | none | Upload history and status |
-| `POST /api/uploads/reset` | none | Removes uploaded data, back to sample data |
-
-## Data and formulas
-
-| Metric | Formula |
+## Project status (honest)
+| Area | Status |
 |---|---|
-| Expected closing | opening + purchases + transfers in + returns - issues - transfers out - breakage |
-| Stock variance | book closing - physical count (positive = shortage, negative = surplus) |
-| Variance value | variance quantity x unit cost |
-| Consumption cost | (opening + purchases + transfers in + returns - transfers out - physical count) x unit cost |
-| F&B cost % | consumption cost / net sales x 100 |
-| Banquet gross profit | net revenue - food - beverage - other direct cost |
-| Banquet margin % | gross profit / net revenue x 100 (null when revenue is 0) |
-| Discount % | discount / original amount x 100 |
-| Void, NC, amenity totals | unique check IDs only; duplicates are reported separately |
+| Ingestion, matching, rules, money trail, infra intelligence, case service, reports, drafts, links | Implemented; unit-tested (`tests/`) |
+| Web UI | Overview, Accounts, Money Trail, Infrastructure, Evidence & Audit, Reports verified manually in a browser; the Links tab and in-browser upload were added later and need a manual check |
+| Real bank statement formats (R4C sample) | **Not yet validated**: parser is mapping-driven; header aliases will need tuning |
+| Certificate Transparency (crt.sh) | Implemented; could not be reached from the test environment, so not verified live |
+| Authentication / roles | Not implemented (single investigator). **Do not expose with real data** |
+| Timestamp correlation with IP-allocation records, cross-case linking, historical/passive DNS | Not implemented |
+| Scale (very large statements) | Not load-tested |
 
-Full column definitions: [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md). Numbers the dashboard should show for the sample data: [docs/EXPECTED_RESULTS.md](docs/EXPECTED_RESULTS.md).
+## Limitations
+Rule indicators can flag legitimate activity; paths are possibilities, not proof; one-sided transfers rely on counterparty text; statement times are assumed
+IST unless configured; geolocation/ASN data is indicative. Full list in every generated report (section 9).
 
-## Upload and validation
-
-Upload from the **Upload data** page or with `POST /api/upload` (`file` and `file_type`). Supported types: inventory, purchases, invoices, beo_events, discount_checks, void_checks, nc_checks, amenities_checks, sales.
-
-- A missing required column **rejects the whole file** and names the column.
-- Negative or non-numeric values and bad dates reject **only those rows**, with row number and column.
-- Missing reasons and approvals are **kept** and flagged as audit exceptions.
-- Duplicate keys are warnings and are counted once in totals.
-- Uploading the identical file again is skipped.
-- A valid file replaces the data for that file type. Rejected files go to `uploaded_data/quarantine/`.
-
-Try it with `sample_data/invalid/inventory_missing_column.csv` and `sample_data/void_checks.csv`.
-
-## Testing
-
-```bash
-python -m pytest -q
+## Layout
+```
+traceintel/      ingest · transfers · rules · trail · links · service · reporting · requests_draft · api · infra/ (enrich, parsers, correlate, cache)
+frontend/        single-file web UI served at /ui
+tests/           engine, infra, service, report, links
+data/synthetic/  generated synthetic statements (python -m traceintel.synthetic)
+config.yaml      all thresholds
 ```
 
-Tests cover inventory variance, cost %, banquet profit, discount, void, NC and amenity checks, no double-counting, invoice exceptions, validation rules, upload flow and every API endpoint. Expected values were checked independently with `python docs/calc_check.py`. GitHub Actions runs the suite on every push and pull request.
-
-## Assumptions to confirm with the hotel
-
-- Returns are added back to stock, and variance sign is book minus physical.
-- Closing value uses the physical count, so breakage and shortage fall inside consumption cost.
-- Limits in `backend/config.py` (discount 20%, amenity value 5,000, repeat voids 3) are **placeholders**, not hotel policy.
-- Food and Beverage are identified from the `item_id` prefix (FD, LQ) until a `category` column is added.
-
-## AWS architecture and status
-
-| Component | Purpose | Status |
-|---|---|---|
-| Local FastAPI + CSV data | Prototype and tests | Done |
-| Validation module | Reusable in Lambda | Done |
-| `database/schema.sql` | RDS PostgreSQL tables | Draft, not yet run on a live database |
-| S3 + Lambda | Raw uploads and event-triggered validation | Planned (Member 2) |
-| RDS PostgreSQL | Business records | Planned (Member 2) |
-| DynamoDB | File status, idempotency, alert status | Planned (Member 2) |
-| Docker, ECR, ECS Fargate | Backend deployment | Planned (Member 2) |
-| IAM, VPC, Secrets Manager, KMS, CloudWatch, CloudTrail | Security and monitoring | Planned (Member 2) |
-
-Switching to RDS only requires changing `backend/data_access.py`; calculations and the dashboard stay the same.
-
-## Known limitations
-
-- No authentication, and CORS is open. Fine for a local prototype; restrict both before any public deployment.
-- No budget comparison yet, and cost % uses a single day of inventory.
-- Alert status is always "Open" until a status store is connected.
-
-## Team
-
-| Member | Area |
-|---|---|
-| Member 1 (Anjali) | Data, calculations, rules, API, dashboard, tests |
-| Member 2 | AWS, backend infrastructure, security, deployment |
-
-## Contributing
-
-Work on a feature branch (`feature/data-dashboard`, `feature/aws-backend`), run `python -m pytest -q`, and open a pull request into `main`. Keep secrets, `.env` files and `uploaded_data/` out of Git.
+## Ethics & legal
+No access to bank systems; no freezing of funds; no active scanning of third-party infrastructure; no real personal data. Draft requests are drafts.
