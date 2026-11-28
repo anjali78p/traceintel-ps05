@@ -37,6 +37,23 @@ class CaseIn(BaseModel):
     is_synthetic: bool = True
 
 
+class LinkIn(BaseModel):
+    from_type: str
+    from_value: str
+    to_type: str
+    to_value: str
+    relation: str
+    explanation: str
+    source_note: Optional[str] = None
+    evidence_id: Optional[str] = None
+    observed_at: Optional[str] = None
+    confidence: str = "unverified"
+
+
+class RetractIn(BaseModel):
+    reason: str
+
+
 class EnrichIn(BaseModel):
     domains: List[str] = []
     ips: List[str] = []
@@ -166,7 +183,7 @@ def _report_file(cid: int, kind: str, victim_utr: Optional[str]):
 @app.get("/cases/{cid}/report.pdf")
 def report_pdf(cid: int, victim_utr: Optional[str] = None):
     p = _report_file(cid, "pdf", victim_utr)
-    return FileResponse(p, media_type="application/pdf", filename=Path(p).name)
+    return FileResponse(p, media_type="application/pdf", filename=Path(p).name, content_disposition_type="inline")
 
 
 @app.get("/cases/{cid}/report.xlsx")
@@ -189,3 +206,22 @@ if FRONTEND.exists():
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse("/ui/")
+
+
+@app.post("/cases/{cid}/links")
+def add_link(cid: int, body: LinkIn):
+    """Investigator-entered financial<->digital link. Requires explanation and a source (evidence_id or source_note)."""
+    lid = _guard(svc.add_link, cid, body.from_type, body.from_value, body.to_type, body.to_value, body.relation, body.explanation,
+                 body.source_note, body.evidence_id, body.observed_at, body.confidence)
+    return {"link_id": lid}
+
+
+@app.get("/cases/{cid}/correlations")
+def correlations(cid: int, include_retracted: bool = False):
+    return _guard(svc.get_correlations, cid, include_retracted)
+
+
+@app.post("/cases/{cid}/links/{lid}/retract")
+def retract_link(cid: int, lid: int, body: RetractIn):
+    _guard(svc.retract_link, cid, lid, body.reason)
+    return {"status": "retracted"}

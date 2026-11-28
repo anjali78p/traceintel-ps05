@@ -15,6 +15,7 @@ paths — never proof of guilt or proven fund movement.
 | Case service: SQLite persistence, evidence register (SHA-256), hash-chained audit log, analysis-run history, enrichment storage, demo seeding | Implemented + tested (stdlib `sqlite3`, not SQLAlchemy/Postgres) |
 | Report generator: PDF (10 sections + appendix) and Excel (12 sheets), FACT/INDICATOR/SUGGESTED/INVESTIGATOR labels, evidence refs, config + limitations, blank investigator-notes section | Implemented + tested (PDF visually inspected) |
 | Draft information requests (bank / registrar / hosting): UTR, timestamps in IST+UTC, legal-process wording, placeholders | Implemented + tested (drafts only; never issued) |
+| Investigator-entered financial↔digital links (explanation + cited source required, IST→UTC, retract-not-delete, audited), derived context + SUGGESTED leads, shown in UI/PDF/Excel | Implemented + tested (backend/report); UI view written, **not yet run** |
 | FastAPI wrapper (`traceintel/api.py`) incl. report/request endpoints | Written; **not yet run/verified** |
 | React UI | **Not yet** |
 | Financial<->digital correlation, evidence register, PDF/Excel report, info-request drafts | **Not yet** |

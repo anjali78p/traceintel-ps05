@@ -13,6 +13,7 @@ import sqlite3
 from .config import load_config
 from .ingest import ingest_file, sha256_file
 from .infra.correlate import suggest_relationships
+from .links import LinkMixin
 from .models import LedgerEntry, Transfer
 from .rules import Finding, run_rules, score_accounts
 from .trail import reconstruct
@@ -35,6 +36,9 @@ CREATE TABLE IF NOT EXISTS findings(id INTEGER PRIMARY KEY, run_id INTEGER, case
 CREATE TABLE IF NOT EXISTS enrichments(case_id INTEGER, type TEXT, indicator TEXT, retrieved_at TEXT, data TEXT, PRIMARY KEY(case_id, type, indicator));
 CREATE TABLE IF NOT EXISTS evidence(case_id INTEGER, evidence_id TEXT, type TEXT, description TEXT, source TEXT, sha256 TEXT,
   created_at TEXT, related TEXT, PRIMARY KEY(case_id, evidence_id));
+CREATE TABLE IF NOT EXISTS links(id INTEGER PRIMARY KEY, case_id INTEGER, from_type TEXT, from_value TEXT, to_type TEXT, to_value TEXT, relation TEXT,
+  explanation TEXT, evidence_id TEXT, source_note TEXT, observed_at_utc TEXT, observed_at_input TEXT, confidence TEXT, status TEXT, actor TEXT, created_at TEXT,
+  retracted_at TEXT, retract_reason TEXT);
 CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY, case_id INTEGER, ts TEXT, actor TEXT, action TEXT, payload TEXT, prev_hash TEXT, hash TEXT);
 """
 
@@ -43,7 +47,7 @@ class CaseNotFound(KeyError):
     pass
 
 
-class CaseService:
+class CaseService(LinkMixin):
     def __init__(self, db_path=":memory:", cfg=None):
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row

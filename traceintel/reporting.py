@@ -58,7 +58,7 @@ def collect(svc, case_id, victim_utr=None):
         "entries": entries, "problems": svc.get_problems(case_id), "transfers": svc.get_transfers(case_id),
         "assessments": svc.get_assessments(case_id), "trail": trail, "victim_utr": victim_utr,
         "enrichments": svc.get_enrichments(case_id), "relationships": svc.get_relationships(case_id),
-        "evidence": svc.get_evidence(case_id), "audit": svc.get_audit(case_id), "audit_check": svc.verify_audit(),
+        "links": svc.get_correlations(case_id), "evidence": svc.get_evidence(case_id), "audit": svc.get_audit(case_id), "audit_check": svc.verify_audit(),
         "date_range": (usable_ts[0], usable_ts[-1]) if usable_ts else (None, None),
         "bank_of": {e["account_key"]: e["bank"] for e in entries},
         "config_rows": list(_flat(cfg)),
@@ -76,6 +76,7 @@ def build_pdf(data, path):
     from reportlab.platypus import CondPageBreak, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     tz, case = data["tz"], data["case"]
+    fixture = any(o.get("source_kind") == "synthetic_fixture" for e in data["enrichments"] for o in e["observations"].values())
     ss = getSampleStyleSheet()
     H1 = ParagraphStyle("H1", parent=ss["Heading1"], fontSize=15, spaceAfter=6)
     H2 = ParagraphStyle("H2", parent=ss["Heading2"], fontSize=11.5, spaceBefore=10, spaceAfter=4, textColor=colors.HexColor("#1F3A5F"))
@@ -131,7 +132,7 @@ def build_pdf(data, path):
         rows.append([f["filename"], f["bank_name"], f["sha256"][:16], str(f["total"]), str(f["ok"]), str(f["invalid"]), str(f["duplicate"])])
     st.append(table(rows, [0.3, 0.2, 0.22, 0.07, 0.07, 0.07, 0.07]))
     srcs = sorted({o["source"] for e in data["enrichments"] for o in e["observations"].values()})
-    st.append(P("Passive public sources used: " + (", ".join(srcs) if srcs else "none (no enrichment run)") + ". No active scanning or probing of third-party systems was performed.", S))
+    st.append(P(("Infrastructure records in this report come from built-in SYNTHETIC fixtures, not live lookups. " if fixture else "") + "Passive public sources used: " + (", ".join(srcs) if srcs else "none (no enrichment run)") + ". No active scanning or probing of third-party systems was performed.", S))
 
     # 3 transaction summary
     c = data["run"]["summary"]; by = c["by_method"]
@@ -198,7 +199,7 @@ def build_pdf(data, path):
 
     # 6 infrastructure
     st += [CondPageBreak(5 * cm), P("6. Digital infrastructure findings", H2), tag("FACT"),
-           P("Public passive data as retrieved at the stated time. Hosting/ASN/geolocation is indicative, not proof of identity or location.", S)]
+           P(("DEMO: these records come from built-in synthetic fixtures, not live lookups. " if fixture else "") + "Public passive data as retrieved at the stated time. Hosting/ASN/geolocation is indicative, not proof of identity or location.", S)]
     if not data["enrichments"]:
         st.append(P("No domain/IP enrichment has been run for this case.", B))
     for e in data["enrichments"]:
@@ -226,7 +227,22 @@ def build_pdf(data, path):
         st.append(table(rows, [0.14, 0.1, 0.24, 0.2, 0.32]))
     else:
         st.append(P("No infrastructure relationships were suggested.", B))
-    st.append(P("Links between bank accounts/UTRs and domains/IPs are NOT established automatically. They require investigator-supplied evidence and are recorded as such.", S))
+    if data["links"]:
+        rows = [["From", "To", "Relation", "Evidence", f"Observed ({tz})", "Confidence", "Explanation"]]
+        for l in data["links"]:
+            rows.append([f"{l['from_type']} {l['from_value']}", f"{l['to_type']} {l['to_value']}", l["relation"].replace("_", " "), l["evidence_id"] or "",
+                         _local(l["observed_at_utc"], tz) if l["observed_at_utc"] else "not stated", l["confidence"], l["explanation"]])
+        st += [P("Financial-to-digital links: INVESTIGATOR-ENTERED, each with cited source evidence. Not inferred by this tool.", H3),
+               table(rows, [0.14, 0.17, 0.12, 0.08, 0.14, 0.09, 0.26])]
+        agg = {}
+        for l in data["links"]:
+            for x in l["suggested_leads"]:
+                agg.setdefault((x["entity"], l["to_value"]), []).append(f"{x['via']} [{x['strength']}]")
+        if agg:
+            st += [tag("SUGGESTED"), P("Leads derived from those links plus automatic correlation (not proof; shared infrastructure does not imply common ownership): " + "; ".join(
+                f"{ent} via {tv}: {', '.join(v)}" for (ent, tv), v in list(agg.items())[:8]), S)]
+    else:
+        st.append(P("Links between bank accounts/UTRs and domains/IPs are NOT established automatically. They require investigator-supplied evidence; none has been entered for this case.", S))
 
     # 8 evidence
     st += [CondPageBreak(5 * cm), P("8. Evidence references", H2), tag("FACT")]
@@ -253,7 +269,7 @@ def build_pdf(data, path):
 
     # appendix
     st += [PageBreak(), P("Appendix A. Draft information requests", H2), tag("INVESTIGATOR"),
-           P("Drafts for review by an authorised officer. They must be completed and issued through the applicable legal process.", S)]
+           P("Drafts for review by an authorised officer. They must be completed and issued through the applicable legal process. Drafts are generated for every looked-up domain/IP; remove any indicator that is not linked to the case by evidence before issuing.", S)]
     for r in data["requests"]:
         st += [KeepTogether([P(f"{r['id']}  ({r['type']}) to: {r['to']}", H3), table([[r["body"]]], [1], header=False)]), Spacer(1, 4)]
     if not data["requests"]:
@@ -322,6 +338,10 @@ def build_xlsx(data, path):
           note="Public passive data; hosting/ASN/geolocation is indicative, not proof of identity or location.")
     sheet("Relationships", ["Type", "Strength", "Entities", "Via", "Caveat", "Evidence refs", "Label"],
           [[r["type"], r["strength"], ", ".join(r["entities"]), r["value"], r["caveat"], ", ".join(r["evidence_refs"]), "SUGGESTED"] for r in data["relationships"]])
+    sheet("Fin-Digital links", ["Link", "From", "To", "Relation", "Evidence", f"Observed ({tz})", "Confidence", "Explanation", "Origin", "Status"],
+          [[l["id"], f"{l['from_type']}:{l['from_value']}", f"{l['to_type']}:{l['to_value']}", l["relation"], l["evidence_id"],
+            _local(l["observed_at_utc"], tz) if l["observed_at_utc"] else "", l["confidence"], l["explanation"], "investigator_entered", l["status"]] for l in data["links"]],
+          note="Investigator-entered links with cited evidence. Not inferred by the tool.")
     sheet("Evidence", ["ID", "Type", "Description", "SHA-256", "Created (UTC)"],
           [[e["evidence_id"], e["type"], e["description"], e["sha256"], e["created_at"]] for e in data["evidence"]])
     sheet("Import problems", ["File", "Row", "Code", "Severity", "Message"],
